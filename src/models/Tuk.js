@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const tukTukSchema = new mongoose.Schema({
+const tukSchema = new mongoose.Schema({
   registrationNumber: {
     type: String,
     required: true,
@@ -19,4 +19,4 @@ const tukTukSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-export default mongoose.model("TukTuk", tukTukSchema);
+export default mongoose.model("Tuk", tukSchema);

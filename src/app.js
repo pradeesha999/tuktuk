@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import tuktukRoutes from "./routes/tuktukRoutes.js";
+import tukRoutes from "./routes/tukRoutes.js";
 
 dotenv.config();
 
@@ -8,7 +8,6 @@ const app = express();
 
 app.use(express.json());
 
-// Routes
-app.use("/api/v1/tuktuks", tuktukRoutes);
+app.use("/api/v1/tuk", tukRoutes);
 
 export default app;
