@@ -1,0 +1,30 @@
+{
+  "name": "webapi",
+  "version": "1.0.0",
+  "description": "\"# tuktuk\"",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pradeesha999/tuktuk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pradeesha999/tuktuk/issues"
+  },
+  "homepage": "https://github.com/pradeesha999/tuktuk#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
