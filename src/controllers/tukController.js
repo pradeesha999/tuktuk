@@ -1,5 +1,7 @@
+// Tuk controller: CRUD handlers for tuk resources.
 import Tuk from "../models/Tuk.js";
 
+// Create one tuk record.
 export const createTukTuk = async (req, res) => {
   try {
     const tuk = await Tuk.create(req.body);
@@ -9,12 +11,11 @@ export const createTukTuk = async (req, res) => {
   }
 };
 
+// Get all tuks, optionally filtered by district.
 export const getTukTuks = async (req, res) => {
   try {
     const { district } = req.query;
-
-    let filter = {};
-    if (district) filter.district = district;
+    const filter = district ? { district } : {};
 
     const tuks = await Tuk.find(filter);
     res.json(tuks);
@@ -23,6 +24,7 @@ export const getTukTuks = async (req, res) => {
   }
 };
 
+// Get one tuk by Mongo id.
 export const getTukById = async (req, res) => {
   try {
     const tuk = await Tuk.findById(req.params.id);
@@ -33,6 +35,7 @@ export const getTukById = async (req, res) => {
   }
 };
 
+// Update one tuk by Mongo id.
 export const updateTuk = async (req, res) => {
   try {
     const tuk = await Tuk.findByIdAndUpdate(req.params.id, req.body, {
@@ -46,6 +49,7 @@ export const updateTuk = async (req, res) => {
   }
 };
 
+// Delete one tuk by Mongo id.
 export const deleteTuk = async (req, res) => {
   try {
     const tuk = await Tuk.findByIdAndDelete(req.params.id);

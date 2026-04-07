@@ -1,3 +1,4 @@
+// Tuk model: stores registered vehicle and device details.
 import mongoose from "mongoose";
 
 const tukSchema = new mongoose.Schema({
