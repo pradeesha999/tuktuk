@@ -1,6 +1,6 @@
 # Tuk Tracking API
 
-REST API built with Node.js, Express, and MongoDB for tuk records and province/district master data.
+REST API built with Node.js, Express, and MongoDB for tuk records, administrative boundaries, and police station master data.
 
 ## Prerequisites
 
@@ -103,6 +103,24 @@ Example District payload (`province` is a Province document `_id`):
   "name": "Colombo",
   "code": "CO",
   "province": "paste_province_mongodb_id_here"
+}
+```
+
+### Police station
+
+- `POST /police-station`
+- `GET /police-station` (optional: `?districtId=<district _id>` or `?provinceId=<province _id>`)
+- `GET /police-station/:id`
+- `PUT /police-station/:id`
+- `DELETE /police-station/:id`
+
+Example Police station payload (`district` is a District document `_id`):
+
+```json
+{
+  "name": "Colombo Fort Police Station",
+  "code": "CMB-FT-01",
+  "district": "paste_district_mongodb_id_here"
 }
 ```
 
