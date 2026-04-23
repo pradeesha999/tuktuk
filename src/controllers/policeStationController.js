@@ -1,6 +1,8 @@
 // Police station controller: CRUD + filters for district / province scope.
 import District from "../models/District.js";
 import PoliceStation from "../models/PoliceStation.js";
+import { sendConditionalJson } from "../utils/conditionalJson.js";
+import { parsePagination, parseSort } from "../utils/queryOptions.js";
 
 const populateDistrictProvince = {
   path: "district",
@@ -22,6 +24,8 @@ export const createPoliceStation = async (req, res) => {
 export const getPoliceStations = async (req, res) => {
   try {
     const { districtId, provinceId } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
+    const sort = parseSort(req.query, ["name", "code", "createdAt"], "name");
     let filter = {};
 
     if (districtId) {
@@ -32,10 +36,19 @@ export const getPoliceStations = async (req, res) => {
       filter.district = { $in: ids };
     }
 
-    const stations = await PoliceStation.find(filter)
-      .populate(populateDistrictProvince)
-      .sort({ name: 1 });
-    res.json(stations);
+    const [items, total] = await Promise.all([
+      PoliceStation.find(filter)
+        .populate(populateDistrictProvince)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      PoliceStation.countDocuments(filter)
+    ]);
+
+    return sendConditionalJson(req, res, {
+      data: items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

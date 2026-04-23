@@ -1,5 +1,7 @@
 // District controller: CRUD handlers for district resources.
 import District from "../models/District.js";
+import { sendConditionalJson } from "../utils/conditionalJson.js";
+import { parsePagination, parseSort } from "../utils/queryOptions.js";
 
 // Create one district record.
 export const createDistrict = async (req, res) => {
@@ -16,11 +18,22 @@ export const createDistrict = async (req, res) => {
 export const getDistricts = async (req, res) => {
   try {
     const { provinceId } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
+    const sort = parseSort(req.query, ["name", "code", "createdAt"], "name");
     const filter = provinceId ? { province: provinceId } : {};
-    const districts = await District.find(filter)
-      .populate("province")
-      .sort({ name: 1 });
-    res.json(districts);
+    const [items, total] = await Promise.all([
+      District.find(filter)
+        .populate("province")
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      District.countDocuments(filter)
+    ]);
+
+    return sendConditionalJson(req, res, {
+      data: items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
