@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - run: npm ci
@@ -23,5 +23,6 @@ jobs:
 
       - name: Test
         env:
-          MONGO_URI: ${{ secrets.TEST_MONGO_URI }}
+          MONGO_URI: ${{ secrets.TEST_MONGO_URI || secrets.MONGO_URI }}
+          TEST_MONGO_URI: ${{ secrets.TEST_MONGO_URI || secrets.MONGO_URI }}
         run: npm test
