@@ -19,6 +19,20 @@ const populateTukGeo = [
   }
 ];
 
+const isTukAllowed = (tuk, auth) => {
+  if (!auth || auth.role === "HQ_ADMIN") return true;
+  if (auth.role === "PROVINCE_ADMIN") {
+    return String(tuk?.district?.province?._id || tuk?.district?.province) === String(auth.provinceId);
+  }
+  if (auth.role === "DISTRICT_OFFICER") {
+    return String(tuk?.district?._id || tuk?.district) === String(auth.districtId);
+  }
+  if (auth.role === "STATION_OFFICER") {
+    return String(tuk?.policeStation?._id || tuk?.policeStation) === String(auth.stationId);
+  }
+  return false;
+};
+
 // Create one tuk record.
 export const createTukTuk = async (req, res) => {
   try {
@@ -79,6 +93,7 @@ export const getTukById = async (req, res) => {
   try {
     const tuk = await Tuk.findById(req.params.id).populate(populateTukGeo);
     if (!tuk) return res.status(404).json({ error: "Not found" });
+    if (!isTukAllowed(tuk, req.auth)) return res.status(403).json({ error: "Forbidden" });
     res.json(tuk);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -88,8 +103,9 @@ export const getTukById = async (req, res) => {
 // Get last known location for one tuk.
 export const getTukLastLocation = async (req, res) => {
   try {
-    const tuk = await Tuk.findById(req.params.id);
+    const tuk = await Tuk.findById(req.params.id).populate(populateTukGeo);
     if (!tuk) return res.status(404).json({ error: "Not found" });
+    if (!isTukAllowed(tuk, req.auth)) return res.status(403).json({ error: "Forbidden" });
 
     const ping = await LocationPing.findOne({ tuk: tuk._id }).sort({ pingedAt: -1 });
     if (!ping) return res.status(404).json({ error: "No location data" });
@@ -110,6 +126,10 @@ export const getTukLastLocation = async (req, res) => {
 // Update one tuk by Mongo id.
 export const updateTuk = async (req, res) => {
   try {
+    const current = await Tuk.findById(req.params.id).populate(populateTukGeo);
+    if (!current) return res.status(404).json({ error: "Not found" });
+    if (!isTukAllowed(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
+
     const payload = { ...req.body };
 
     if (!payload.district && payload.legacyDistrictName) {
@@ -134,6 +154,10 @@ export const updateTuk = async (req, res) => {
 // Delete one tuk by Mongo id.
 export const deleteTuk = async (req, res) => {
   try {
+    const current = await Tuk.findById(req.params.id).populate(populateTukGeo);
+    if (!current) return res.status(404).json({ error: "Not found" });
+    if (!isTukAllowed(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
+
     const tuk = await Tuk.findByIdAndDelete(req.params.id);
     if (!tuk) return res.status(404).json({ error: "Not found" });
     res.json({ message: "Deleted", id: tuk._id });

@@ -6,6 +6,7 @@ import provinceRoutes from "./routes/provinceRoutes.js";
 import districtRoutes from "./routes/districtRoutes.js";
 import locationPingRoutes from "./routes/locationPingRoutes.js";
 import policeStationRoutes from "./routes/policeStationRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -18,5 +19,6 @@ app.use("/api/v1/province", provinceRoutes);
 app.use("/api/v1/district", districtRoutes);
 app.use("/api/v1/police-station", policeStationRoutes);
 app.use("/api/v1/location-ping", locationPingRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 export default app;

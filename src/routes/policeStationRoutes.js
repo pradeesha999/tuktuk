@@ -7,13 +7,18 @@ import {
   updatePoliceStation,
   deletePoliceStation
 } from "../controllers/policeStationController.js";
+import { applyScope, authenticateToken, authorizeRoles } from "../middleware/authMiddleware.js";
+import { validateRequest } from "../middleware/validationMiddleware.js";
+import { policeStationCreateValidator, policeStationUpdateValidator } from "../validators/resourceValidators.js";
 
 const router = express.Router();
 
-router.post("/", createPoliceStation);
-router.get("/", getPoliceStations);
-router.get("/:id", getPoliceStationById);
-router.put("/:id", updatePoliceStation);
-router.delete("/:id", deletePoliceStation);
+router.use(authenticateToken);
+
+router.post("/", authorizeRoles("HQ_ADMIN"), policeStationCreateValidator, validateRequest, createPoliceStation);
+router.get("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("policeStation", "list"), getPoliceStations);
+router.get("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getPoliceStationById);
+router.put("/:id", authorizeRoles("HQ_ADMIN"), policeStationUpdateValidator, validateRequest, updatePoliceStation);
+router.delete("/:id", authorizeRoles("HQ_ADMIN"), deletePoliceStation);
 
 export default router;
