@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
 import { getAuthUsers } from "../config/authUsers.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "12h";
+const getJwtConfig = () => ({
+  secret: process.env.JWT_SECRET || "change-this-secret",
+  expiresIn: process.env.JWT_EXPIRES_IN || "12h"
+});
 
 export const login = async (req, res) => {
   try {
@@ -23,7 +25,8 @@ export const login = async (req, res) => {
       tukId: user.tukId || null
     };
 
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const { secret, expiresIn } = getJwtConfig();
+    const token = jwt.sign(payload, secret, { expiresIn });
     return res.json({ token, user: payload });
   } catch (error) {
     return res.status(500).json({ error: error.message });

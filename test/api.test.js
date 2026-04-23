@@ -2,18 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
 import app from "../src/app.js";
 
 dotenv.config();
-const testMongoUri = process.env.TEST_MONGO_URI || process.env.MONGO_URI;
+
+let mongoServer;
+let testMongoUri = process.env.TEST_MONGO_URI || process.env.MONGO_URI;
 let authToken = "";
 
 const withAuth = (reqBuilder) => reqBuilder.set("Authorization", `Bearer ${authToken}`);
 
 test.before(async () => {
   if (!testMongoUri) {
-    throw new Error("Set TEST_MONGO_URI or MONGO_URI for tests");
+    mongoServer = await MongoMemoryServer.create();
+    testMongoUri = mongoServer.getUri();
   }
 
   await mongoose.connect(testMongoUri, { dbName: "webapi_test" });
@@ -21,6 +25,9 @@ test.before(async () => {
 
 test.after(async () => {
   await mongoose.connection.close();
+  if (mongoServer) {
+    await mongoServer.stop();
+  }
 });
 
 test.beforeEach(async () => {

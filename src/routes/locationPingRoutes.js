@@ -7,6 +7,55 @@ import { locationPingCreateValidator } from "../validators/resourceValidators.js
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: LocationPing
+ *     description: Location ping ingestion and history
+ */
+/**
+ * @swagger
+ * /location-ping:
+ *   post:
+ *     tags: [LocationPing]
+ *     summary: Create location ping
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Location ping created
+ *   get:
+ *     tags: [LocationPing]
+ *     summary: List location pings
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: tukId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: districtId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: provinceId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: from
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: to
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *     responses:
+ *       200:
+ *         description: Location ping list
+ */
 router.use(authenticateToken);
 
 router.post(

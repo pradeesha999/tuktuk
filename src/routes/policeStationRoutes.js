@@ -13,6 +13,87 @@ import { policeStationCreateValidator, policeStationUpdateValidator } from "../v
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: PoliceStation
+ *     description: Police station management
+ */
+/**
+ * @swagger
+ * /police-station:
+ *   post:
+ *     tags: [PoliceStation]
+ *     summary: Create police station
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Police station created
+ *   get:
+ *     tags: [PoliceStation]
+ *     summary: List police stations
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: districtId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: provinceId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Police station list
+ */
+/**
+ * @swagger
+ * /police-station/{id}:
+ *   get:
+ *     tags: [PoliceStation]
+ *     summary: Get police station by id
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Police station found
+ *   put:
+ *     tags: [PoliceStation]
+ *     summary: Update police station
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Police station updated
+ *   delete:
+ *     tags: [PoliceStation]
+ *     summary: Delete police station
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Police station deleted
+ */
 router.use(authenticateToken);
 
 router.post("/", authorizeRoles("HQ_ADMIN"), policeStationCreateValidator, validateRequest, createPoliceStation);

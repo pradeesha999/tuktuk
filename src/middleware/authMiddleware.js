@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret";
+const getJwtSecret = () => process.env.JWT_SECRET || "change-this-secret";
 
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization || "";
@@ -11,9 +11,9 @@ export const authenticateToken = (req, res, next) => {
   }
 
   try {
-    req.auth = jwt.verify(token, JWT_SECRET);
+    req.auth = jwt.verify(token, getJwtSecret());
     return next();
-  } catch (error) {
+  } catch (_error) {
     return res.status(401).json({ error: "Invalid token" });
   }
 };

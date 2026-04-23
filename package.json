@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "lint": "eslint .",
+    "lint:ci": "eslint . --max-warnings 0",
     "test": "node --test",
     "seed:master": "node scripts/seedMasterData.js",
     "simulate:tracking": "node scripts/simulateTrackingData.js"
@@ -28,9 +30,14 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.1.1",
-    "mongoose": "^9.3.3"
+    "mongoose": "^9.3.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.1",
+    "globals": "^17.5.0",
     "mongodb-memory-server": "^10.2.1",
     "nodemon": "^3.1.14",
     "supertest": "^7.1.4"

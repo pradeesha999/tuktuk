@@ -13,6 +13,83 @@ import { districtCreateValidator, districtUpdateValidator } from "../validators/
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: District
+ *     description: District management
+ */
+/**
+ * @swagger
+ * /district:
+ *   post:
+ *     tags: [District]
+ *     summary: Create district
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: District created
+ *   get:
+ *     tags: [District]
+ *     summary: List districts
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: provinceId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: District list
+ */
+/**
+ * @swagger
+ * /district/{id}:
+ *   get:
+ *     tags: [District]
+ *     summary: Get district by id
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: District found
+ *   put:
+ *     tags: [District]
+ *     summary: Update district
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: District updated
+ *   delete:
+ *     tags: [District]
+ *     summary: Delete district
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: District deleted
+ */
 router.use(authenticateToken);
 
 router.post("/", authorizeRoles("HQ_ADMIN"), districtCreateValidator, validateRequest, createDistrict);

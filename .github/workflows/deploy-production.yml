@@ -1,0 +1,41 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint:ci
+
+      - name: Test
+        env:
+          MONGO_URI: ${{ secrets.TEST_MONGO_URI }}
+        run: npm test
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd ${{ secrets.EC2_APP_DIR }}
+            git fetch origin main
+            git checkout main
+            git pull origin main
+            npm ci --omit=dev
+            pm2 restart ${{ secrets.PM2_APP_NAME }} || pm2 start server.js --name ${{ secrets.PM2_APP_NAME }}

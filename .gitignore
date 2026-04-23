@@ -4,6 +4,9 @@ node_modules/
 # Environment variables (VERY IMPORTANT)
 .env
 
+# SSH / TLS private keys (never commit)
+*.pem
+
 # Logs
 logs
 *.log
