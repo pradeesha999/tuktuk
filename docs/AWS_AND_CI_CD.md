@@ -97,7 +97,7 @@ GitHub repo → **Settings** → **Secrets and variables** → **Actions** → *
 
 | Secret name | Purpose |
 |-------------|---------|
-| `TEST_MONGO_URI` | Atlas connection string used **only in CI** (use a separate database name or cluster user if you want isolation). |
+| `TEST_MONGO_URI` | Optional. If unset, CI tests use **MongoDB Memory Server** (no Atlas needed). Set this if you want CI to hit a real Atlas database instead. |
 | `EC2_HOST` | EC2 public IP or DNS, e.g. `3.120.45.67` |
 | `EC2_USER` | Usually `ubuntu` on Ubuntu AMIs |
 | `EC2_SSH_KEY` | Full private key text (the `.pem` contents), including `BEGIN` / `END` lines |
