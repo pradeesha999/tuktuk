@@ -10,7 +10,7 @@ Use one secret per row. **Never commit real values** to git; this file is only f
 
 | Secret name        | Your value (paste here for your notes only) |
 |--------------------|-----------------------------------------------|
-| `TEST_MONGO_URI`   | Atlas-style URI for `npm test` in CI (like `MONGO_URI` in `.env.example`). Prefer a separate DB name (e.g. `webapi_test`) on the same cluster if you want isolation. _If your workflow only sets `MONGO_URI`, tests can use that instead — see `test/api.test.js`._ |
+| `TEST_MONGO_URI`   | Atlas-style URI for `npm test` in CI (like `MONGO_URI` in `.env.example`). Prefer a separate DB name (e.g. `webapi_test`) on the same cluster if you want isolation. **Alternatively**, add a repository secret named `MONGO_URI` with the same value — workflows use `TEST_MONGO_URI` first, then fall back to `MONGO_URI`. |
 | `EC2_HOST`         | `13.63.49.231` (public IPv4 for this project’s EC2; matches `docs/AWS_AND_CI_CD.md`) |
 | `EC2_USER`         | `ubuntu` |
 | `EC2_SSH_KEY`      | Full private key text from your `.pem` (e.g. local file `Webserver-api.pem` — paste **contents only** into GitHub, never commit the file). Must include `BEGIN` / `END` lines. |
@@ -23,7 +23,7 @@ Use one secret per row. **Never commit real values** to git; this file is only f
 
 | Secret name       | Purpose |
 |-------------------|---------|
-| `TEST_MONGO_URI`  | Mongo URL for `npm test` in GitHub Actions (this workflow expects it). |
+| `TEST_MONGO_URI`  | Mongo URL for `npm test` in CI; if unset, workflows use `MONGO_URI` instead. |
 | `EC2_HOST`        | Public IPv4 or DNS of the EC2 instance. |
 | `EC2_USER`        | SSH login user (Ubuntu AMI → usually `ubuntu`). |
 | `EC2_SSH_KEY`     | Private key that matches the key pair on the instance. |
