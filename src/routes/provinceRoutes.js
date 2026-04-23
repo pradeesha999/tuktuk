@@ -7,13 +7,18 @@ import {
   updateProvince,
   deleteProvince
 } from "../controllers/provinceController.js";
+import { authenticateToken, authorizeRoles } from "../middleware/authMiddleware.js";
+import { validateRequest } from "../middleware/validationMiddleware.js";
+import { provinceCreateValidator, provinceUpdateValidator } from "../validators/resourceValidators.js";
 
 const router = express.Router();
 
-router.post("/", createProvince);
-router.get("/", getProvinces);
-router.get("/:id", getProvinceById);
-router.put("/:id", updateProvince);
-router.delete("/:id", deleteProvince);
+router.use(authenticateToken);
+
+router.post("/", authorizeRoles("HQ_ADMIN"), provinceCreateValidator, validateRequest, createProvince);
+router.get("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getProvinces);
+router.get("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getProvinceById);
+router.put("/:id", authorizeRoles("HQ_ADMIN"), provinceUpdateValidator, validateRequest, updateProvince);
+router.delete("/:id", authorizeRoles("HQ_ADMIN"), deleteProvince);
 
 export default router;
