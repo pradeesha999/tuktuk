@@ -13,6 +13,78 @@ import { provinceCreateValidator, provinceUpdateValidator } from "../validators/
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Province
+ *     description: Province management
+ */
+/**
+ * @swagger
+ * /province:
+ *   post:
+ *     tags: [Province]
+ *     summary: Create province
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Province created
+ *   get:
+ *     tags: [Province]
+ *     summary: List provinces
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Province list
+ */
+/**
+ * @swagger
+ * /province/{id}:
+ *   get:
+ *     tags: [Province]
+ *     summary: Get province by id
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Province found
+ *   put:
+ *     tags: [Province]
+ *     summary: Update province
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Province updated
+ *   delete:
+ *     tags: [Province]
+ *     summary: Delete province
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Province deleted
+ */
 router.use(authenticateToken);
 
 router.post("/", authorizeRoles("HQ_ADMIN"), provinceCreateValidator, validateRequest, createProvince);

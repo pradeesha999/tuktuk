@@ -34,7 +34,7 @@ export const getAuthUsers = () => {
   try {
     const parsed = JSON.parse(process.env.AUTH_USERS);
     return Array.isArray(parsed) ? parsed : defaultUsers;
-  } catch (error) {
+  } catch (_error) {
     return defaultUsers;
   }
 };
