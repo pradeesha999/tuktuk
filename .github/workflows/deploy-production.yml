@@ -25,6 +25,7 @@ jobs:
         run: npm test
 
       - name: Deploy to EC2
+        if: ${{ secrets.EC2_HOST != '' && secrets.EC2_SSH_KEY != '' && secrets.EC2_APP_DIR != '' && secrets.EC2_USER != '' && secrets.PM2_APP_NAME != '' }}
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
