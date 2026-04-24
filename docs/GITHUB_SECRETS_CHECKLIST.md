@@ -14,7 +14,7 @@ Use one secret per row. **Never commit real values** to git; this file is only f
 | `EC2_HOST`         | `13.63.49.231` (public IPv4 for this project’s EC2; matches `docs/AWS_AND_CI_CD.md`) |
 | `EC2_USER`         | `ubuntu` |
 | `EC2_SSH_KEY`      | Full private key text from your `.pem` (e.g. local file `Webserver-api.pem` — paste **contents only** into GitHub, never commit the file). Must include `BEGIN` / `END` lines. |
-| `EC2_APP_DIR`      | `/var/www/webapi` (clone path used in `docs/AWS_AND_CI_CD.md`; must be where `server.js` and `.git` live on the server) |
+| `EC2_APP_DIR`      | **`/var/www/tuktuk`** on your EC2 (run `pwd` in the folder where you `git pull` — it must match this secret **exactly**). If this is wrong, Actions SSH can succeed but update a different folder than PM2 runs from. |
 | `PM2_APP_NAME`     | `webapi` (same as `pm2 start server.js --name webapi` in `docs/AWS_AND_CI_CD.md`) |
 
 ---
@@ -59,10 +59,24 @@ No extra spaces at the start of lines. In GitHub, paste as **one multiline secre
 The workflow **Deploy production** (`.github/workflows/deploy-production.yml`) runs on **every push to `main`**. It will **fail** if, for example:
 
 - Any of `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`, `EC2_APP_DIR`, or `PM2_APP_NAME` is **missing** or wrong.
-- `EC2_APP_DIR` is wrong → `cd` fails (for this setup it should be `/var/www/webapi` unless you cloned elsewhere).
+- `EC2_APP_DIR` is wrong → `cd` fails or updates the wrong folder (yours should be `/var/www/tuktuk` if that is where you cloned).
 - The server cannot `git pull` (no repo, wrong remote, or branch permissions).
 - SSH key does not match the instance, or security group blocks port 22 from GitHub’s runners.
 
 **Lint/tests** can pass while **Deploy** still fails — check the **Actions** tab → failed run → expand **Deploy to EC2** for the exact error.
 
 After secrets are correct, re-run the workflow or push an empty commit to `main` to deploy again.
+
+---
+
+## Deploy did not update the VM (common causes)
+
+1. **`EC2_APP_DIR` mismatch** — On the server, `cd` to the directory where PM2 runs `server.js` and run `pwd`. That path must be the same as the `EC2_APP_DIR` secret (your machine uses `/var/www/tuktuk`, not `/var/www/webapi`).
+
+2. **GitHub cannot SSH into EC2** — The security group must allow **inbound TCP 22** from **GitHub Actions runners**, not only from your home IP. Runner IPs change; for coursework many people use **SSH from `0.0.0.0/0`** (tighten later) or a self-hosted runner.
+
+3. **`deploy` job failed** — In GitHub: **Actions** → latest **Deploy production** run → open the **Deploy to EC2** step log. Email notifications are easy to miss; the log is the source of truth.
+
+4. **API works on the server but not from the internet** — Open **inbound TCP 5000** (or your `PORT`) from `0.0.0.0/0` in the EC2 security group. `curl http://127.0.0.1:5000` on the VM only proves the process listens locally.
+
+5. **Listen address** — `server.js` should listen on `0.0.0.0` (already in repo). After `git pull`, run `pm2 restart webapi` once so the running process picks it up.

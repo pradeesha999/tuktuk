@@ -59,8 +59,8 @@ Clone your repo (use your real GitHub URL):
 sudo mkdir -p /var/www
 sudo chown -R $USER:$USER /var/www
 cd /var/www
-git clone https://github.com/YOUR_USER/YOUR_REPO.git webapi
-cd webapi
+git clone https://github.com/YOUR_USER/YOUR_REPO.git tuktuk
+cd tuktuk
 git checkout main
 ```
 
@@ -102,7 +102,7 @@ GitHub repo → **Settings** → **Secrets and variables** → **Actions** → *
 | `EC2_HOST`       | EC2 public IP or DNS, e.g. `3.120.45.67`                                                                          |
 | `EC2_USER`       | Usually `ubuntu` on Ubuntu AMIs                                                                                   |
 | `EC2_SSH_KEY`    | Full private key text (the `.pem` contents), including `BEGIN` / `END` lines                                      |
-| `EC2_APP_DIR`    | App path on server, e.g. `/var/www/webapi`                                                                        |
+| `EC2_APP_DIR`    | App path on server, e.g. `/var/www/tuktuk` (must match `pwd` in your clone)                                     |
 | `PM2_APP_NAME`   | e.g. `webapi` (must match what you used in `pm2 start`)                                                           |
 
 
