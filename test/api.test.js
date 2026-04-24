@@ -120,7 +120,12 @@ test("create/list pings with time-window filters", async () => {
   assert.equal(list.status, 200);
   assert.equal(list.body.data.length, 1);
 
-  const lastLocation = await withAuth(request(app).get(`/api/v1/tuk/${tuk.body._id}/last-location`));
+  const tukId = String(tuk.body._id ?? tuk.body.id);
+  const allPings = await withAuth(request(app).get(`/api/v1/location-ping?tukId=${tukId}`));
+  assert.equal(allPings.status, 200);
+  assert.ok(allPings.body.data.length >= 2, "expected pings to exist before last-location");
+
+  const lastLocation = await withAuth(request(app).get(`/api/v1/tuk/${tukId}/last-location`));
   assert.equal(lastLocation.status, 200);
   assert.equal(typeof lastLocation.body.latitude, "number");
 });
