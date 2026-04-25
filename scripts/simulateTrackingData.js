@@ -59,8 +59,7 @@ const simulateTrackingData = async () => {
           deviceId,
           ownerName: `Owner ${i + 1}`,
           district: district._id,
-          policeStation: station?._id,
-          legacyDistrictName: district.name
+          policeStation: station?._id
         },
         { upsert: true, returnDocument: "after", runValidators: true }
       );

@@ -1,7 +1,5 @@
 // Province controller: CRUD handlers for province resources.
 import Province from "../models/Province.js";
-import { sendConditionalJson } from "../utils/conditionalJson.js";
-import { parsePagination, parseSort } from "../utils/queryOptions.js";
 
 // Create one province record.
 export const createProvince = async (req, res) => {
@@ -16,17 +14,8 @@ export const createProvince = async (req, res) => {
 // Get all provinces.
 export const getProvinces = async (req, res) => {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
-    const sort = parseSort(req.query, ["name", "code", "createdAt"], "name");
-    const [items, total] = await Promise.all([
-      Province.find().sort(sort).skip(skip).limit(limit),
-      Province.countDocuments()
-    ]);
-
-    return sendConditionalJson(req, res, {
-      data: items,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
-    });
+    const provinces = await Province.find().sort({ name: 1 });
+    return res.json(provinces);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -2,8 +2,6 @@
 import District from "../models/District.js";
 import LocationPing from "../models/LocationPing.js";
 import Tuk from "../models/Tuk.js";
-import { sendConditionalJson } from "../utils/conditionalJson.js";
-import { parsePagination, parseSort } from "../utils/queryOptions.js";
 
 const pingPopulate = {
   path: "tuk",
@@ -25,8 +23,6 @@ export const createLocationPing = async (req, res) => {
 export const getLocationPings = async (req, res) => {
   try {
     const { tukId, districtId, provinceId, from, to } = req.query;
-    const { page, limit, skip } = parsePagination(req.query);
-    const sort = parseSort(req.query, ["pingedAt", "createdAt"], "pingedAt");
     const filter = {};
 
     if (from || to) {
@@ -50,15 +46,8 @@ export const getLocationPings = async (req, res) => {
       filter.tuk = { $in: tuks.map((item) => item._id) };
     }
 
-    const [items, total] = await Promise.all([
-      LocationPing.find(filter).populate(pingPopulate).sort(sort).skip(skip).limit(limit),
-      LocationPing.countDocuments(filter)
-    ]);
-
-    return sendConditionalJson(req, res, {
-      data: items,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
-    });
+    const pings = await LocationPing.find(filter).populate(pingPopulate).sort({ pingedAt: -1 });
+    return res.json(pings);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
