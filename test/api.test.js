@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
@@ -34,11 +35,11 @@ test.beforeEach(async () => {
   const collections = await mongoose.connection.db.collections();
   await Promise.all(collections.map((collection) => collection.deleteMany({})));
 
-  const loginRes = await request(app).post("/api/v1/auth/login").send({
-    username: "hqadmin",
-    password: "hqadmin123"
-  });
-  authToken = loginRes.body.token;
+  authToken = jwt.sign(
+    { username: "ci_hq_admin", role: "HQ_ADMIN" },
+    process.env.JWT_SECRET || "change-this-secret",
+    { expiresIn: "15m" }
+  );
 });
 
 test("province -> district -> station linked retrieval", async () => {
