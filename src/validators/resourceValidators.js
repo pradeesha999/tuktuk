@@ -40,10 +40,8 @@ export const tukCreateValidator = [
   body("registrationNumber").isString().trim().notEmpty(),
   body("deviceId").isString().trim().notEmpty(),
   body("ownerName").optional().isString(),
-  body("district").optional().matches(mongoId),
-  body("policeStation").optional().matches(mongoId),
-  body("legacyDistrictName").optional().isString().trim().notEmpty(),
-  body().custom((value) => Boolean(value.district || value.legacyDistrictName))
+  body("district").matches(mongoId),
+  body("policeStation").optional().matches(mongoId)
 ];
 
 export const tukUpdateValidator = [
@@ -51,8 +49,7 @@ export const tukUpdateValidator = [
   body("deviceId").optional().isString().trim().notEmpty(),
   body("ownerName").optional().isString(),
   body("district").optional().matches(mongoId),
-  body("policeStation").optional().matches(mongoId),
-  body("legacyDistrictName").optional().isString().trim().notEmpty()
+  body("policeStation").optional().matches(mongoId)
 ];
 
 export const locationPingCreateValidator = [

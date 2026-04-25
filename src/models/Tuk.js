@@ -24,9 +24,6 @@ const tukSchema = new mongoose.Schema(
     policeStation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PoliceStation"
-    },
-    legacyDistrictName: {
-      type: String
     }
   },
   { timestamps: true }

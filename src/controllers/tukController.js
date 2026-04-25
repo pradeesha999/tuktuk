@@ -2,8 +2,6 @@
 import District from "../models/District.js";
 import LocationPing from "../models/LocationPing.js";
 import Tuk from "../models/Tuk.js";
-import { sendConditionalJson } from "../utils/conditionalJson.js";
-import { parsePagination, parseSort } from "../utils/queryOptions.js";
 
 const populateTukGeo = [
   {
@@ -36,16 +34,7 @@ const isTukAllowed = (tuk, auth) => {
 // Create one tuk record.
 export const createTukTuk = async (req, res) => {
   try {
-    const payload = { ...req.body };
-
-    if (!payload.district && payload.legacyDistrictName) {
-      const district = await District.findOne({ name: payload.legacyDistrictName });
-      if (district) {
-        payload.district = district._id;
-      }
-    }
-
-    const tuk = await Tuk.create(payload);
+    const tuk = await Tuk.create(req.body);
     const populated = await Tuk.findById(tuk._id).populate(populateTukGeo);
     res.status(201).json(populated);
   } catch (error) {
@@ -56,33 +45,24 @@ export const createTukTuk = async (req, res) => {
 // Get all tuks, with optional geography filters.
 export const getTukTuks = async (req, res) => {
   try {
-    const { districtId, provinceId, stationId, district } = req.query;
-    const { page, limit, skip } = parsePagination(req.query);
-    const sort = parseSort(req.query, ["registrationNumber", "createdAt"], "createdAt");
+    const { districtId, provinceId, stationId } = req.query;
     const filter = {};
 
     if (districtId) {
       filter.district = districtId;
-    } else if (provinceId) {
+    }
+
+    if (provinceId) {
       const districts = await District.find({ province: provinceId }).select("_id").lean();
       filter.district = { $in: districts.map((item) => item._id) };
-    } else if (district) {
-      filter.legacyDistrictName = district;
     }
 
     if (stationId) {
       filter.policeStation = stationId;
     }
 
-    const [items, total] = await Promise.all([
-      Tuk.find(filter).populate(populateTukGeo).sort(sort).skip(skip).limit(limit),
-      Tuk.countDocuments(filter)
-    ]);
-
-    return sendConditionalJson(req, res, {
-      data: items,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
-    });
+    const tuks = await Tuk.find(filter).populate(populateTukGeo).sort({ createdAt: -1 });
+    return res.json(tuks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -130,16 +110,7 @@ export const updateTuk = async (req, res) => {
     if (!current) return res.status(404).json({ error: "Not found" });
     if (!isTukAllowed(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
 
-    const payload = { ...req.body };
-
-    if (!payload.district && payload.legacyDistrictName) {
-      const district = await District.findOne({ name: payload.legacyDistrictName });
-      if (district) {
-        payload.district = district._id;
-      }
-    }
-
-    const updated = await Tuk.findByIdAndUpdate(req.params.id, payload, {
+    const updated = await Tuk.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     });

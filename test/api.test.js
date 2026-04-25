@@ -23,7 +23,8 @@ test.before(async () => {
   }
 
   const useIsolatedDb = process.env.GITHUB_ACTIONS === "true" || process.env.CI === "true";
-  const dbName = useIsolatedDb ? `webapi_test_${crypto.randomUUID().replace(/-/g, "")}` : "webapi_test";
+  const shortId = crypto.randomBytes(6).toString("hex");
+  const dbName = useIsolatedDb ? `webapi_${shortId}` : "webapi_test";
 
   await mongoose.connect(testMongoUri, { dbName });
 });
@@ -60,8 +61,8 @@ test("province -> district -> station linked retrieval", async () => {
 
   const listRes = await withAuth(request(app).get(`/api/v1/police-station?provinceId=${provinceRes.body._id}`));
   assert.equal(listRes.status, 200);
-  assert.equal(listRes.body.data.length, 1);
-  const first = listRes.body.data[0];
+  assert.equal(listRes.body.length, 1);
+  const first = listRes.body[0];
   assert.ok(first?.district, `missing district on station: ${JSON.stringify(first)}`);
   assert.ok(first.district?.province, `missing province populate: ${JSON.stringify(first.district)}`);
   assert.equal(first.district.province.name, "Western");
@@ -86,11 +87,11 @@ test("create/list tuk with filters", async () => {
 
   const districtFiltered = await withAuth(request(app).get(`/api/v1/tuk?districtId=${district.body._id}`));
   assert.equal(districtFiltered.status, 200);
-  assert.equal(districtFiltered.body.data.length, 1);
+  assert.equal(districtFiltered.body.length, 1);
 
   const provinceFiltered = await withAuth(request(app).get(`/api/v1/tuk?provinceId=${province.body._id}`));
   assert.equal(provinceFiltered.status, 200);
-  assert.equal(provinceFiltered.body.data.length, 1);
+  assert.equal(provinceFiltered.body.length, 1);
 });
 
 test("create/list pings with time-window filters", async () => {
@@ -126,12 +127,12 @@ test("create/list pings with time-window filters", async () => {
   const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const list = await withAuth(request(app).get(`/api/v1/location-ping?tukId=${tuk.body._id}&from=${encodeURIComponent(from)}`));
   assert.equal(list.status, 200);
-  assert.equal(list.body.data.length, 1);
+  assert.equal(list.body.length, 1);
 
   const tukId = String(tuk.body._id ?? tuk.body.id);
   const allPings = await withAuth(request(app).get(`/api/v1/location-ping?tukId=${tukId}`));
   assert.equal(allPings.status, 200);
-  assert.ok(allPings.body.data.length >= 2, "expected pings to exist before last-location");
+  assert.ok(allPings.body.length >= 2, "expected pings to exist before last-location");
 
   const lastLocation = await withAuth(request(app).get(`/api/v1/tuk/${tukId}/last-location`));
   assert.equal(lastLocation.status, 200);
