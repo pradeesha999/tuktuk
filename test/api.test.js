@@ -23,7 +23,8 @@ test.before(async () => {
   }
 
   const useIsolatedDb = process.env.GITHUB_ACTIONS === "true" || process.env.CI === "true";
-  const dbName = useIsolatedDb ? `webapi_test_${crypto.randomUUID().replace(/-/g, "")}` : "webapi_test";
+  const shortId = crypto.randomBytes(6).toString("hex");
+  const dbName = useIsolatedDb ? `webapi_${shortId}` : "webapi_test";
 
   await mongoose.connect(testMongoUri, { dbName });
 });
