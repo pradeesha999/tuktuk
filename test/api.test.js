@@ -14,6 +14,10 @@ let mongoServer;
 let testMongoUri = process.env.TEST_MONGO_URI || process.env.MONGO_URI;
 let authToken = "";
 
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "test-jwt-secret-for-ci";
+}
+
 const withAuth = (reqBuilder) => reqBuilder.set("Authorization", `Bearer ${authToken}`);
 
 test.before(async () => {
