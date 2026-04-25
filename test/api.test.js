@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -21,7 +22,10 @@ test.before(async () => {
     testMongoUri = mongoServer.getUri();
   }
 
-  await mongoose.connect(testMongoUri, { dbName: "webapi_test" });
+  const useIsolatedDb = process.env.GITHUB_ACTIONS === "true" || process.env.CI === "true";
+  const dbName = useIsolatedDb ? `webapi_test_${crypto.randomUUID().replace(/-/g, "")}` : "webapi_test";
+
+  await mongoose.connect(testMongoUri, { dbName });
 });
 
 test.after(async () => {
@@ -57,7 +61,10 @@ test("province -> district -> station linked retrieval", async () => {
   const listRes = await withAuth(request(app).get(`/api/v1/police-station?provinceId=${provinceRes.body._id}`));
   assert.equal(listRes.status, 200);
   assert.equal(listRes.body.data.length, 1);
-  assert.equal(listRes.body.data[0].district.province.name, "Western");
+  const first = listRes.body.data[0];
+  assert.ok(first?.district, `missing district on station: ${JSON.stringify(first)}`);
+  assert.ok(first.district?.province, `missing province populate: ${JSON.stringify(first.district)}`);
+  assert.equal(first.district.province.name, "Western");
 });
 
 test("create/list tuk with filters", async () => {
