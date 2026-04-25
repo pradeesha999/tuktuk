@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "lint": "eslint .",
     "lint:ci": "eslint . --max-warnings 0",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=1",
     "seed:master": "node scripts/seedMasterData.js",
     "simulate:tracking": "node scripts/simulateTrackingData.js"
   },
