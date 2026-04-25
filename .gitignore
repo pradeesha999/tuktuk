@@ -28,3 +28,6 @@ coverage/
 .idea/
 
 *.env
+
+# Coursework notes (keep local only)
+courseowork.md

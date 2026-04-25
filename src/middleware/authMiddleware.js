@@ -1,6 +1,12 @@
 import jwt from "jsonwebtoken";
 
-const getJwtSecret = () => process.env.JWT_SECRET || "change-this-secret";
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is required");
+  }
+  return secret;
+};
 
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization || "";

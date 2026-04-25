@@ -1,8 +1,16 @@
 import jwt from "jsonwebtoken";
 import { getAuthUsers } from "../config/authUsers.js";
 
+const getRequiredEnv = (name) => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required`);
+  }
+  return value;
+};
+
 const getJwtConfig = () => ({
-  secret: process.env.JWT_SECRET || "change-this-secret",
+  secret: getRequiredEnv("JWT_SECRET"),
   expiresIn: process.env.JWT_EXPIRES_IN || "12h"
 });
 
