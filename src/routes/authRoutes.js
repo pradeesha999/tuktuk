@@ -1,7 +1,8 @@
 import express from "express";
-import { login } from "../controllers/authController.js";
+import { login, register } from "../controllers/authController.js";
+import { authenticateToken, authorizeRoles } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validationMiddleware.js";
-import { loginValidator } from "../validators/authValidators.js";
+import { loginValidator, registerValidator } from "../validators/authValidators.js";
 
 const router = express.Router();
 
@@ -37,5 +38,6 @@ const router = express.Router();
  *         description: Invalid credentials
  */
 router.post("/login", loginValidator, validateRequest, login);
+router.post("/register", authenticateToken, authorizeRoles("HQ_ADMIN"), registerValidator, validateRequest, register);
 
 export default router;
