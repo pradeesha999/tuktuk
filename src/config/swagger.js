@@ -8,7 +8,9 @@ const options = {
       version: "1.0.0",
       description: "REST API for tuk tracking and movement logging"
     },
-    servers: [{ url: "http://localhost:5000/api/v1" }],
+    // Use relative URL by default so Swagger "Try it out" works
+    // both locally and on hosted environments.
+    servers: [{ url: process.env.SWAGGER_SERVER_URL || "/api/v1" }],
     components: {
       securitySchemes: {
         bearerAuth: {
