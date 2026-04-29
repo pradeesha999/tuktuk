@@ -142,3 +142,53 @@ test("create/list pings with time-window filters", async () => {
   assert.equal(lastLocation.status, 200);
   assert.equal(typeof lastLocation.body.latitude, "number");
 });
+
+test("auth/register: HQ_ADMIN can register station officer and new user can login", async () => {
+  const province = await withAuth(request(app).post("/api/v1/province")).send({ name: "Western", code: "WP" });
+  assert.equal(province.status, 201);
+  const district = await withAuth(request(app).post("/api/v1/district"))
+    .send({ name: "Colombo", code: "CMB", province: province.body._id });
+  assert.equal(district.status, 201);
+  const station = await withAuth(request(app).post("/api/v1/police-station"))
+    .send({ name: "Colombo Police Station", code: "CMB-PS", district: district.body._id });
+  assert.equal(station.status, 201);
+
+  const register = await withAuth(request(app).post("/api/v1/auth/register")).send({
+    username: "station.ops",
+    password: "StrongPass123!",
+    role: "STATION_OFFICER",
+    stationId: station.body._id
+  });
+
+  assert.equal(register.status, 201);
+  assert.equal(register.body.username, "station.ops");
+  assert.equal(register.body.role, "STATION_OFFICER");
+
+  const login = await request(app).post("/api/v1/auth/login").send({
+    username: "station.ops",
+    password: "StrongPass123!"
+  });
+  assert.equal(login.status, 200);
+  assert.equal(login.body.user.role, "STATION_OFFICER");
+  assert.equal(String(login.body.user.stationId), String(station.body._id));
+});
+
+test("auth/register: non-HQ user is forbidden", async () => {
+  const nonHqToken = jwt.sign(
+    { username: "province_admin", role: "PROVINCE_ADMIN", provinceId: "64f0f0f0f0f0f0f0f0f0f0f0" },
+    process.env.JWT_SECRET || "change-this-secret",
+    { expiresIn: "15m" }
+  );
+
+  const register = await request(app)
+    .post("/api/v1/auth/register")
+    .set("Authorization", `Bearer ${nonHqToken}`)
+    .send({
+      username: "district.ops",
+      password: "StrongPass123!",
+      role: "DISTRICT_OFFICER",
+      districtId: "64f1f1f1f1f1f1f1f1f1f1f1"
+    });
+
+  assert.equal(register.status, 403);
+});
