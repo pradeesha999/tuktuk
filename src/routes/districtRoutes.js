@@ -27,6 +27,23 @@ const router = express.Router();
  *     summary: Create district
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, code, province]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Colombo
+ *               code:
+ *                 type: string
+ *                 example: CMB
+ *               province:
+ *                 type: string
+ *                 example: 64f0f0f0f0f0f0f0f0f0f0f0
  *     responses:
  *       201:
  *         description: District created
@@ -72,6 +89,22 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Colombo
+ *               code:
+ *                 type: string
+ *                 example: CMB
+ *               province:
+ *                 type: string
+ *                 example: 64f0f0f0f0f0f0f0f0f0f0f0
  *     responses:
  *       200:
  *         description: District updated

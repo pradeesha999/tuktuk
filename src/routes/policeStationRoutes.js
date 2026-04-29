@@ -27,6 +27,23 @@ const router = express.Router();
  *     summary: Create police station
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, code, district]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Colombo Police Station
+ *               code:
+ *                 type: string
+ *                 example: CMB-PS
+ *               district:
+ *                 type: string
+ *                 example: 64f1f1f1f1f1f1f1f1f1f1f1
  *     responses:
  *       201:
  *         description: Police station created
@@ -76,6 +93,22 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Colombo Police Station
+ *               code:
+ *                 type: string
+ *                 example: CMB-PS
+ *               district:
+ *                 type: string
+ *                 example: 64f1f1f1f1f1f1f1f1f1f1f1
  *     responses:
  *       200:
  *         description: Police station updated

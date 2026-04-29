@@ -21,6 +21,37 @@ const router = express.Router();
  *     summary: Create location ping
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [latitude, longitude]
+ *             properties:
+ *               tuk:
+ *                 type: string
+ *                 description: Optional for HQ/admin users; DEVICE role is auto-bound by token scope.
+ *                 example: 64f3f3f3f3f3f3f3f3f3f3f3
+ *               latitude:
+ *                 type: number
+ *                 example: 6.9271
+ *               longitude:
+ *                 type: number
+ *                 example: 79.8612
+ *               pingedAt:
+ *                 type: string
+ *                 format: date-time
+ *                 example: 2026-04-29T12:00:00.000Z
+ *               speedKmh:
+ *                 type: number
+ *                 example: 22.5
+ *               heading:
+ *                 type: number
+ *                 example: 180
+ *               source:
+ *                 type: string
+ *                 example: simulated
  *     responses:
  *       201:
  *         description: Location ping created
