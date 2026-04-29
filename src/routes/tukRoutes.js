@@ -28,6 +28,29 @@ const router = express.Router();
  *     summary: Create tuk
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [registrationNumber, deviceId, district]
+ *             properties:
+ *               registrationNumber:
+ *                 type: string
+ *                 example: WP-1234
+ *               deviceId:
+ *                 type: string
+ *                 example: device-0001
+ *               ownerName:
+ *                 type: string
+ *                 example: Jane
+ *               district:
+ *                 type: string
+ *                 example: 64f1f1f1f1f1f1f1f1f1f1f1
+ *               policeStation:
+ *                 type: string
+ *                 example: 64f2f2f2f2f2f2f2f2f2f2f2
  *     responses:
  *       201:
  *         description: Tuk created
@@ -81,6 +104,28 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               registrationNumber:
+ *                 type: string
+ *                 example: WP-1234
+ *               deviceId:
+ *                 type: string
+ *                 example: device-0001
+ *               ownerName:
+ *                 type: string
+ *                 example: Jane
+ *               district:
+ *                 type: string
+ *                 example: 64f1f1f1f1f1f1f1f1f1f1f1
+ *               policeStation:
+ *                 type: string
+ *                 example: 64f2f2f2f2f2f2f2f2f2f2f2
  *     responses:
  *       200:
  *         description: Tuk updated

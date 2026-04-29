@@ -27,6 +27,20 @@ const router = express.Router();
  *     summary: Create province
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, code]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Western
+ *               code:
+ *                 type: string
+ *                 example: WP
  *     responses:
  *       201:
  *         description: Province created
@@ -67,6 +81,19 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Western
+ *               code:
+ *                 type: string
+ *                 example: WP
  *     responses:
  *       200:
  *         description: Province updated
