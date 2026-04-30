@@ -15,9 +15,20 @@ const provinceSchema = new mongoose.Schema(
       unique: true,
       uppercase: true,
       trim: true
+    },
+    boundary: {
+      type: {
+        type: String,
+        enum: ["Polygon", "MultiPolygon"]
+      },
+      coordinates: {
+        type: Array
+      }
     }
   },
   { timestamps: true }
 );
+
+provinceSchema.index({ boundary: "2dsphere" });
 
 export default mongoose.model("Province", provinceSchema);

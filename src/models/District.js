@@ -20,9 +20,20 @@ const districtSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Province",
       required: true
+    },
+    boundary: {
+      type: {
+        type: String,
+        enum: ["Polygon", "MultiPolygon"]
+      },
+      coordinates: {
+        type: Array
+      }
     }
   },
   { timestamps: true }
 );
+
+districtSchema.index({ boundary: "2dsphere" });
 
 export default mongoose.model("District", districtSchema);

@@ -5,6 +5,7 @@ import {
   getTukTuks,
   getTukById,
   getTukLastLocation,
+  getTuksCurrentArea,
   updateTuk,
   deleteTuk
 } from "../controllers/tukController.js";
@@ -146,6 +147,27 @@ const router = express.Router();
  */
 /**
  * @swagger
+ * /tuk/current-area:
+ *   get:
+ *     tags: [Tuk]
+ *     summary: Get latest resolved district/province per tuk
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: provinceId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: districtId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Current resolved area list
+ */
+/**
+ * @swagger
  * /tuk/{id}/last-location:
  *   get:
  *     tags: [Tuk]
@@ -166,6 +188,7 @@ router.use(authenticateToken);
 
 router.post("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "write"), tukCreateValidator, validateRequest, createTukTuk);
 router.get("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "list"), getTukTuks);
+router.get("/current-area", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTuksCurrentArea);
 router.get("/:id/last-location", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTukLastLocation);
 router.get("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTukById);
 router.put("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "write"), tukUpdateValidator, validateRequest, updateTuk);

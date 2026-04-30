@@ -11,6 +11,7 @@
     "test": "node --test --test-concurrency=1",
     "stress:test": "node scripts/stressTest.js",
     "seed:master": "node scripts/seedMasterData.js",
+    "seed:geo-boundaries": "node scripts/seedGeoBoundaries.js",
     "simulate:tracking": "node scripts/simulateTrackingData.js"
   },
   "repository": {
@@ -26,7 +27,6 @@
   },
   "homepage": "https://github.com/pradeesha999/tuktuk#readme",
   "dependencies": {
-    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
