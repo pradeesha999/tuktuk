@@ -1,7 +1,8 @@
 // District controller: CRUD handlers for district resources.
 import District from "../models/District.js";
 import Province from "../models/Province.js";
-import { mergeActive } from "../utils/softDelete.js";
+import { mergeActive, stripDeletedAt } from "../utils/softDelete.js";
+import { populateProvinceCompact } from "../utils/geoResponse.js";
 import {
   parsePagination,
   parseSort,
@@ -10,18 +11,6 @@ import {
 
 const DISTRICT_SORT_FIELDS = ["name", "code", "createdAt", "updatedAt"];
 
-const stripDeletedAt = (body) => {
-  const copy = { ...body };
-  delete copy.deletedAt;
-  return copy;
-};
-
-const populateProvinceActive = {
-  path: "province",
-  match: { deletedAt: null },
-  select: "-boundary"
-};
-
 // Create one district record.
 export const createDistrict = async (req, res) => {
   try {
@@ -29,7 +18,7 @@ export const createDistrict = async (req, res) => {
     if (!provinceOk) return res.status(400).json({ error: "Province not found or inactive" });
 
     const district = await District.create(req.body);
-    const populated = await District.findOne(mergeActive({ _id: district._id })).populate(populateProvinceActive);
+    const populated = await District.findOne(mergeActive({ _id: district._id })).populate(populateProvinceCompact);
     res.status(201).json(populated);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -46,7 +35,7 @@ export const getDistricts = async (req, res) => {
     const { skip, limit } = parsePagination(req.query);
 
     let query = District.find(filter)
-      .populate(populateProvinceActive)
+      .populate(populateProvinceCompact)
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -69,7 +58,7 @@ export const getDistricts = async (req, res) => {
 // Get one district by Mongo id.
 export const getDistrictById = async (req, res) => {
   try {
-    let query = District.findOne(mergeActive({ _id: req.params.id })).populate(populateProvinceActive);
+    let query = District.findOne(mergeActive({ _id: req.params.id })).populate(populateProvinceCompact);
     if (req.query.includeBoundary !== "true") {
       query = query.select("-boundary");
     }
@@ -95,7 +84,7 @@ export const updateDistrict = async (req, res) => {
       runValidators: true
     });
     if (!updated) return res.status(404).json({ error: "Not found" });
-    const district = await District.findOne(mergeActive({ _id: updated._id })).populate(populateProvinceActive);
+    const district = await District.findOne(mergeActive({ _id: updated._id })).populate(populateProvinceCompact);
     res.json(district);
   } catch (error) {
     res.status(400).json({ error: error.message });
