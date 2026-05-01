@@ -1,29 +1,26 @@
 # Tuk-Tuk Tracking API
 
-**Student ID:** COBSCCOMP242P-052  
-**Module:** NB6007CEM — Web API Development (Coventry / NIBM)  
-**Author:** Pradeesha Hettiarachchi  
+A RESTful Web API for tracking three-wheelers (tuk-tuks) and their movement history, designed for use by police headquarters, provincial offices, district offices and police stations. The API exposes administrative geography (provinces, districts, stations), registered vehicles, and a high-volume location-ping pipeline, with role-based access and GeoJSON-aware geographic filtering.
 
-This repository is the **RESTful Web API** for the coursework business case: a **centralised tuk-tuk (three-wheeler) tracking and movement logging** system for **Sri Lanka law enforcement**—vehicle registration, administrative geography (provinces / districts / stations), **GPS location pings**, **last-known location**, **historical movement** with time and geography filters, and **role-based access** (HQ, province, district, station, and device clients). There is **no mobile app or web UI** in scope; use **Swagger UI**, **Postman**, or **curl** (see [`docs/API_TEST_AND_CURL_GUIDE.md`](docs/API_TEST_AND_CURL_GUIDE.md)).
+> Author: Pradeesha Hettiarachchi · Student ID: COBSCCOMP242P-052
+
+**Live API:** [`https://webapi-tuktuk.duckdns.org`](https://webapi-tuktuk.duckdns.org)
+**Swagger UI:** [`https://webapi-tuktuk.duckdns.org/api-docs/`](https://webapi-tuktuk.duckdns.org/api-docs/)
 
 ---
 
-## Alignment with the coursework brief
+## Features
 
-| Coursework expectation | How this project addresses it |
-|------------------------|----------------------------------|
-| RESTful API, Node.js / ES6+ | Express 5, ES modules, JSON over HTTP |
-| HQ / provincial / district / station users | JWT roles: `HQ_ADMIN`, `PROVINCE_ADMIN`, `DISTRICT_OFFICER`, `STATION_OFFICER` |
-| Tuk operators / devices | Role `DEVICE`; **only devices** may `POST` location pings (JWT must include `tukId`) |
-| Provinces & districts (Sri Lanka) | **9 provinces**, **25 districts** via `npm run seed:master`; GeoJSON **boundaries** via `npm run seed:geo-boundaries` |
-| 20+ police stations | **25** stations (one per district) in the same seed |
-| 200+ registered tuks | `npm run simulate:tracking` upserts **200** tuks |
-| Periodic pings, ≥1 week history, realistic patterns | **3-hour** interval over **7 days**; in-polygon sampling + short-path movement inside home district; `source: "simulated"` |
-| Simulation / demo data | Data is **written to MongoDB** by scripts (suitable for demo and report; export to JSON/CSV separately if the brief requires a file artefact) |
-| API specification (Swagger) | **OpenAPI 3** via `swagger-jsdoc`; UI at **`/api-docs`** |
-| Deployed API (viva: not localhost-only) | Deploy as you document in the report; see [`docs/AWS_AND_CI_CD.md`](docs/AWS_AND_CI_CD.md) and [`.github/workflows`](.github/workflows) |
-
-**Report & submission:** Write the **≈3000-word report** separately (LMS). Include **Student ID** here (above), **GitHub URL**, **deployed API URL**, **Swagger URL**, and add the **assessor as GitHub collaborator** as required by the brief. Optional local notes: [`docs/REPORT.md`](docs/REPORT.md), [`docs/MANUAL_E2E_FLOW.md`](docs/MANUAL_E2E_FLOW.md).
+- **JWT authentication** with `bcrypt` password hashing.
+- **Five roles** with progressively narrower scope: `HQ_ADMIN`, `PROVINCE_ADMIN`, `DISTRICT_OFFICER`, `STATION_OFFICER`, `DEVICE`.
+- **GeoJSON boundary resolution** — every ping is tagged with the district and province it actually fell inside, using a `2dsphere` index and `$geoIntersects`.
+- **Jurisdiction-aware visibility** — officers see all pings for vehicles registered in their patch, plus transit pings (plate-only) for foreign vehicles passing through.
+- **Filtering, client-controlled sorting, pagination, and conditional GET** — `?provinceId=`, `?districtId=`, `?from=`, `?to=`, `?sort=-pingedAt`, `?skip=`, `?limit=`, plus `ETag` / `If-None-Match` for `304 Not Modified` responses.
+- **Pagination headers** — `X-Total-Count` and RFC 5988 `Link` (`rel="next"` / `rel="prev"`).
+- **Rate limiting** — global limiter plus a stricter limiter on `/auth/*`.
+- **Soft delete** across all resources so historical references are never broken.
+- **OpenAPI 3.0 documentation** generated from JSDoc, served at `/api-docs`.
+- **Reproducible demo data** — scripts to seed master data and 200 vehicles with a week of simulated pings.
 
 ---
 
@@ -31,205 +28,146 @@ This repository is the **RESTful Web API** for the coursework business case: a *
 
 | Layer | Choice |
 |-------|--------|
-| Runtime | Node.js (ES modules, `"type": "module"`) |
+| Runtime | Node.js (ES modules) |
 | HTTP | Express 5 |
-| Data | MongoDB + Mongoose 9 |
-| Auth | JWT (`jsonwebtoken`), bcrypt password hashing |
+| Data | MongoDB (Atlas) + Mongoose |
+| Auth | JSON Web Tokens, `bcryptjs` |
 | Validation | `express-validator` |
-| Security / ops | `helmet`, `cors`, `express-rate-limit` (global + stricter auth route limiter) |
-| API docs | `swagger-jsdoc` + `swagger-ui-express` → `/api-docs` |
+| Security | `helmet`, `cors`, `express-rate-limit` |
+| Docs | `swagger-jsdoc` + `swagger-ui-express` |
+| Tests | `node:test`, `supertest`, `mongodb-memory-server` |
+| Process manager | PM2 (production) |
+| Reverse proxy / TLS | Nginx + Let’s Encrypt |
+| CI/CD | GitHub Actions → AWS EC2 |
 
 ---
 
-## Repository layout
+## Quick start
 
+```bash
+git clone https://github.com/pradeesha999/tuktuk
+cd tuktuk
+npm install
+cp .env.example .env   # then edit
+npm run dev            # development with nodemon
 ```
-server.js                 # Entry: validate env, connect DB, listen
-src/
-  app.js                  # Express app, middleware, route mounting
-  config/
-    db.js                 # Mongoose connect; `getAppDatabaseName()` (default `webapi_prod`)
-    env.js                # Required env validation (`MONGO_URI`, `JWT_SECRET`)
-    swagger.js            # OpenAPI base + bearer security
-    authUsers.js          # Optional dev fallback users (override with `AUTH_USERS` JSON)
-  controllers/            # Province, district, police station, tuk, location ping, auth
-  middleware/             # JWT auth, RBAC, `bindDeviceTukForPing`, validation
-  models/                 # Province, District, PoliceStation, Tuk, LocationPing, User
-  routes/                 # REST routes + Swagger JSDoc annotations
-  utils/
-    softDelete.js         # `mergeActive`, `activeTukDocMatch` (soft delete)
-    resolveAdministrativeArea.js  # GeoJSON `$geoIntersects` → resolved district/province
-    geoResponse.js        # Populate shapes that omit huge `boundary` fields in JSON
-    jurisdictionPingScope.js      # Home vs transit ping visibility + plate-only sanitise
-  validators/             # Auth + resource express-validator chains
-scripts/
-  seedMasterData.js       # Provinces, districts, stations
-  seedGeoBoundaries.js    # OSM/Nominatim polygons → `boundary` on Province/District
-  simulateTrackingData.js # 200 tuks + ~1 week pings (requires boundaries)
-  seedPoliceStations.js   # Auxiliary / legacy station seeding if used
-  migrateTestDbToWebapiProd.js
-  cleanupTestDbs.js
-  stressTest.js
-test/
-  api.test.js             # Supertest integration tests (memory or `TEST_MONGO_URI`)
-docs/                     # Runbooks, curl guide, E2E checklist, report notes
-.github/workflows/      # CI (e.g. lint/test on push)
-courseowork.md            # Module brief (local reference)
-```
+
+The server listens on `PORT` (default `5000`). Swagger UI is at `http://localhost:5000/api-docs`.
 
 ---
 
 ## Environment variables
 
-**Required**
+| Variable | Required | Purpose |
+|----------|:--------:|---------|
+| `MONGO_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Secret used to sign JSON Web Tokens |
+| `PORT` | No | HTTP port, defaults to `5000` |
+| `MONGO_DB_NAME` | No | Database name, defaults to `webapi_prod` |
+| `JWT_EXPIRES_IN` | No | Token lifetime (`12h` by default) |
+| `CORS_ORIGIN` | No | Allowed origin, defaults to `*` |
+| `SWAGGER_SERVER_URL` | No | OpenAPI `servers` URL, defaults to `/api/v1` |
+| `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | No | Global rate limit |
+| `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX` | No | Stricter limit for `/auth/*` |
+| `LAST_PING_AREA_MAX_AGE_MINUTES` | No | Stale cutoff for `GET /tuk/last-ping-area` |
+| `AUTH_USERS` | No | JSON array of fallback dev users |
 
-| Variable | Purpose |
-|----------|---------|
-| `MONGO_URI` | MongoDB connection string (Atlas or local) |
-| `JWT_SECRET` | Secret for signing JWTs |
-
-**Common optional**
-
-| Variable | Default / notes |
-|----------|-----------------|
-| `PORT` | `5000` |
-| `MONGO_DB_NAME` | `webapi_prod` — database name used by the app and seed/simulate scripts (can differ from path in URI) |
-| `JWT_EXPIRES_IN` | `12h` |
-| `CORS_ORIGIN` | `*` |
-| `SWAGGER_SERVER_URL` | `/api/v1` — OpenAPI server URL for “Try it out” |
-| `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | Global API rate limit |
-| `AUTH_RATE_LIMIT_WINDOW_MS` / `AUTH_RATE_LIMIT_MAX` | `/api/v1/auth/*` limiter |
-| `LAST_PING_AREA_MAX_AGE_MINUTES` | Fallback: `CURRENT_AREA_MAX_AGE_MINUTES`, then `60` — stale cutoff for `GET /tuk/last-ping-area` |
-| `AUTH_USERS` | JSON array of `{ username, password, role, provinceId?, districtId?, stationId?, tukId? }` to override [`src/config/authUsers.js`](src/config/authUsers.js) dev users |
-
-**Tests** (`npm test`): use `TEST_MONGO_URI` (optional) and `TEST_DB_NAME` (default `webapi_test`); tests clear non-system collections between cases.
-
-Example `.env`:
-
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://USER:PASS@CLUSTER.mongodb.net/?retryWrites=true&w=majority
-MONGO_DB_NAME=webapi_prod
-JWT_SECRET=use_a_long_random_string
-JWT_EXPIRES_IN=12h
-```
-
-URL-encode special characters in passwords inside `MONGO_URI`. In Atlas, configure **Network Access** for your IP (or VPC) and ensure the DB user can read/write the target database.
+Sensible defaults exist for everything except the two required entries.
 
 ---
 
-## Install and run
+## Demo data scripts
+
+Run **in order** against the database the API uses (`MONGO_DB_NAME`, default `webapi_prod`):
 
 ```bash
-npm install
-npm run dev          # nodemon — development
-npm start            # production (node server.js)
-npm run lint         # ESLint
-npm run lint:ci      # ESLint, zero warnings (CI)
-npm test             # Node test runner + supertest (concurrency 1)
-npm run stress:test  # Optional local stress script
+npm run seed:master           # 9 provinces, 25 districts, 25 stations
+npm run seed:geo-boundaries   # GeoJSON polygons from OpenStreetMap (Nominatim)
+npm run simulate:tracking     # 200 tuks + ~1 week of pings
+npm run export:simulation     # dump JSON + CSV artefacts to ./data
 ```
 
-- **Health:** server listens on `PORT` (default **5000**), host `0.0.0.0`.  
-- **API base path:** `/api/v1`  
-- **Swagger UI:** `http://localhost:<PORT>/api-docs` (or your deployed origin + `/api-docs`). Click **Authorize** and send `Bearer <token>`.
-
----
-
-## Demo data pipeline (coursework-scale simulation)
-
-Run **in order** against the same database the API uses (`MONGO_DB_NAME`, default `webapi_prod`):
-
-```bash
-npm run seed:master          # 9 provinces, 25 districts, 25 police stations
-npm run seed:geo-boundaries  # Fetches GeoJSON from Nominatim (network; ~1 req/s). Populates Province/District.boundary
-npm run simulate:tracking    # Deletes prior simulated pings, upserts 200 tuks, inserts ~1 week of pings
-```
-
-- **Geo seed** needs outbound HTTPS. If a boundary is missing, check script logs and Nominatim usage policy (script sends a descriptive `User-Agent`).  
-- **Simulation** keeps pings inside each tuk’s **home district** polygon (in-memory point-in-polygon + Mongo resolution for stored fields), sets `point`, `resolvedDistrict`, `resolvedProvince`, and uses **compact** responses elsewhere so list endpoints do not return multi‑MB GeoJSON.
-
-Other maintenance scripts (see `package.json`): `npm run migrate:test-to-prod`, `npm run cleanup:test-dbs`.
+`seed:geo-boundaries` requires outbound HTTPS and is rate-limited at one request per second to respect Nominatim policy. `simulate:tracking` keeps each vehicle inside its home district polygon and writes `source: "simulated"` so future runs replace prior simulated pings without touching real data. `export:simulation` produces `data/provinces.json`, `data/districts.json`, `data/police_stations.json`, `data/tuks.json`, `data/location_pings.json` and `data/location_pings.csv`.
 
 ---
 
 ## Authentication and roles
 
-| Role | Typical JWT claims | Capabilities (summary) |
-|------|--------------------|---------------------------|
-| `HQ_ADMIN` | — | Full CRUD on geography and tuks; all pings; optional filters on lists |
-| `PROVINCE_ADMIN` | `provinceId` | Scoped lists; full ping trail for **tuks registered in that province**; **transit-only** pings (resolved in province) for other tuks; minimal tuk info for out-of-scope tuks |
-| `DISTRICT_OFFICER` | `districtId` | Scoped lists; full trail for **tuks registered in that district**; **transit-only** pings when `resolvedDistrict` is that district; plate-only embedded `tuk` on those rows |
-| `STATION_OFFICER` | `stationId` (+ effective district from station) | Same pattern as district, anchored to the station’s district |
-| `DEVICE` | **`tukId` (required for pings)** | **`POST /location-ping` only** (plus **`GET /location-ping`** for that tuk); blocked from other resources |
+| Role | Capabilities |
+|------|--------------|
+| `HQ_ADMIN` | Full CRUD on geography, vehicles, users; sees all pings |
+| `PROVINCE_ADMIN` | Read/write within one province |
+| `DISTRICT_OFFICER` | Read/write within one district |
+| `STATION_OFFICER` | Read/write within one police station |
+| `DEVICE` | `POST /location-ping` for one bound vehicle (and read its own history) |
 
-**Login:** `POST /api/v1/auth/login` with `{ "username", "password" }` → `{ token, user }`.  
-**Register:** `POST /api/v1/auth/register` — **`HQ_ADMIN` only** — creates a DB user with hashed password and scope fields.
+`POST /api/v1/auth/login` returns a JWT containing the user's role and any scope ids (`provinceId`, `districtId`, `stationId`, `tukId`). All other endpoints require `Authorization: Bearer <jwt>`.
 
-Default **development** users (plain passwords) are in [`src/config/authUsers.js`](src/config/authUsers.js) unless overridden by `AUTH_USERS`. **Production:** use DB users only; for **`DEVICE`**, ensure the user (or JSON entry) includes **`tukId`** matching a real tuk, otherwise ping ingestion returns 403.
+`POST /api/v1/auth/register` is restricted to `HQ_ADMIN` and creates a database user with a hashed password and the relevant scope id.
 
 ---
 
 ## REST API surface (v1)
 
-All routes below are under **`/api/v1`** and (except login) require:
+All endpoints are under `/api/v1`. The full specification, including request bodies and response shapes, is in Swagger.
 
-```http
-Authorization: Bearer <JWT>
+| Resource | Path | Notes |
+|----------|------|-------|
+| Authentication | `/auth/login`, `/auth/register` | `register` is HQ-only |
+| Province | `/province` | `?includeBoundary=true` to retrieve polygon |
+| District | `/district` | Optional `?provinceId=` |
+| Police station | `/police-station` | Optional `?provinceId=` / `?districtId=` |
+| Tuk | `/tuk`, `/tuk/:id/last-location`, `/tuk/last-ping-area` | Geographic filters honoured per role |
+| Location ping | `/location-ping` | `POST` is `DEVICE`-only |
+
+List endpoints share a common shape:
+
+- **Filter**: `provinceId`, `districtId`, `stationId`, `tukId`, `from`, `to`.
+- **Sort**: `?sort=field` ascending or `?sort=-field` descending. Each endpoint whitelists which fields are sortable.
+- **Paginate**: `?skip=`, `?limit=` (default 100, max 500). Responses include `X-Total-Count` and a `Link` header with `rel="next"` and `rel="prev"`.
+- **Conditional GET**: every JSON response carries an `ETag`. Resending the request with `If-None-Match: "<etag>"` returns `304 Not Modified` with no body when nothing changed.
+
+---
+
+## Project layout
+
+```
+server.js                       Entry point: env validation, DB connect, listen
+src/
+  app.js                        Express app, middleware, route mounting
+  config/                       db, env, swagger, fallback dev users
+  controllers/                  Request handlers per resource
+  middleware/                   JWT auth, RBAC scope, validation
+  models/                       Mongoose schemas
+  routes/                       REST routes + OpenAPI annotations
+  utils/                        Soft-delete helpers, sort/pagination,
+                                geo response shaping, jurisdiction rules,
+                                geographic resolution
+  validators/                   express-validator chains
+scripts/                        Seed, simulate, export, migrate, stress
+test/                           Integration tests (supertest)
+docs/                           Project documentation
 ```
 
-| Resource | Path prefix | Notes |
-|----------|-------------|--------|
-| Auth | `/auth` | `POST /login` (no JWT); `POST /register` (HQ only) |
-| Province | `/province` | List responses omit large `boundary` by default; `GET /province/:id?includeBoundary=true` to include |
-| District | `/district` | Same `includeBoundary` pattern on `GET /district/:id` |
-| Police station | `/police-station` | Optional `?provinceId=` / `?districtId=` |
-| Tuk | `/tuk` | `GET /tuk/:id/last-location`; `GET /tuk/last-ping-area` (alias `GET /tuk/current-area`); geography query params on lists where RBAC allows |
-| Location ping | `/location-ping` | **`POST` = `DEVICE` only**; **`GET`** supports `limit` (default 100, max 500), `skip`, time range, optional `tukId` / HQ-only resolved filters |
+---
 
-**Jurisdiction rules for pings (officers):**  
-- **Home tuks** (registered in your province/district/station): **all** pings worldwide.  
-- **Other tuks**: only pings whose **resolved** district/province is **inside** your jurisdiction; JSON shows **`tuk` as `{ _id, registrationNumber }`** only for those.
+## Tests and lint
 
-**Geo resolution:** Each ping stores `latitude`, `longitude`, GeoJSON `point`, and `resolvedDistrict` / `resolvedProvince` from boundaries seeded by `seed:geo-boundaries`.
+```bash
+npm test           # integration tests with supertest + memory MongoDB
+npm run lint:ci    # ESLint with --max-warnings 0
+```
 
-Full method-level detail: **Swagger** at `/api-docs` and [`docs/API_ENDPOINTS_FULL.md`](docs/API_ENDPOINTS_FULL.md).
+The CI workflow (`.github/workflows/ci.yml`) runs both on every push and pull request.
 
 ---
 
-## Coursework “simulation data” note
+## Deployment
 
-The brief asks for generated data in **JSON or CSV**. This project generates **MongoDB documents** via scripts (realistic scale for the API). For submission artefacts, **export** collections (e.g. Compass, `mongoexport`) or note in the report that the **canonical** demo dataset lives in the deployed database and is reproducible with the npm scripts above.
-
----
-
-## Testing and quality
-
-- **`npm test`** — integration tests against `mongodb-memory-server` or `TEST_MONGO_URI`.  
-- **`npm run lint:ci`** — must pass with **zero warnings** (matches rubric expectations for clean code).
+The production deployment runs on Ubuntu on AWS EC2. PM2 supervises the Node process and Nginx terminates TLS using a Let's Encrypt certificate (auto-renewed by certbot). The API listens on `127.0.0.1:5000` while Nginx exposes `443/tcp` to the public internet; port `5000` is not open in the security group. CI on `main` runs lint and tests, then connects over SSH to pull, install with `npm ci --omit=dev`, and `pm2 restart`.
 
 ---
 
-## Documentation in `docs/`
+## License
 
-| File | Purpose |
-|------|---------|
-| [`API_TEST_AND_CURL_GUIDE.md`](docs/API_TEST_AND_CURL_GUIDE.md) | curl / Postman examples |
-| [`API_ENDPOINTS_FULL.md`](docs/API_ENDPOINTS_FULL.md) | Endpoint reference |
-| [`MANUAL_E2E_FLOW.md`](docs/MANUAL_E2E_FLOW.md) | Manual E2E checklist |
-| [`AWS_AND_CI_CD.md`](docs/AWS_AND_CI_CD.md) | Deployment / CI |
-| [`GITHUB_SECRETS_CHECKLIST.md`](docs/GITHUB_SECRETS_CHECKLIST.md) | GitHub Actions secrets |
-| [`SECURITY_IMPLEMENTATION_PLAN.md`](docs/SECURITY_IMPLEMENTATION_PLAN.md) | Security notes |
-| [`P1_TRANSPORT_AND_SECRETS_RUNBOOK.md`](docs/P1_TRANSPORT_AND_SECRETS_RUNBOOK.md) | Transport/secrets runbook |
-| [`REPORT.md`](docs/REPORT.md) | Report workspace / notes |
-
----
-
-## GitHub & license
-
-- **Repository:** [github.com/pradeesha999/tuktuk](https://github.com/pradeesha999/tuktuk)  
-- **License:** ISC  
-
----
-
-**Reminder:** Add your **module assessor** as a **collaborator** on the GitHub repository before the deadline, and keep the **deployed API** and **Swagger** URLs current in your report appendix.
+ISC.
