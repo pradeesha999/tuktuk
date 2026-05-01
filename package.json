@@ -12,7 +12,9 @@
     "stress:test": "node scripts/stressTest.js",
     "seed:master": "node scripts/seedMasterData.js",
     "seed:geo-boundaries": "node scripts/seedGeoBoundaries.js",
-    "simulate:tracking": "node scripts/simulateTrackingData.js"
+    "simulate:tracking": "node scripts/simulateTrackingData.js",
+    "cleanup:test-dbs": "node scripts/cleanupTestDbs.js",
+    "migrate:test-to-prod": "node scripts/migrateTestDbToWebapiProd.js"
   },
   "repository": {
     "type": "git",
