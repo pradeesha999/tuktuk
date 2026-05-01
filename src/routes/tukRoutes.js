@@ -150,7 +150,7 @@ const router = express.Router();
  * /tuk/current-area:
  *   get:
  *     tags: [Tuk]
- *     summary: Get latest resolved district/province per tuk
+ *     summary: Get latest resolved district/province per tuk (scoped by role; stale pings excluded)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -158,10 +158,18 @@ const router = express.Router();
  *         name: provinceId
  *         schema:
  *           type: string
+ *         description: Optional for HQ only (forced from JWT for province admins).
  *       - in: query
  *         name: districtId
  *         schema:
  *           type: string
+ *         description: Optional for HQ only (forced from JWT for district/station roles).
+ *       - in: query
+ *         name: maxAgeMinutes
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Latest ping must be newer than this many minutes (default 60, or CURRENT_AREA_MAX_AGE_MINUTES).
  *     responses:
  *       200:
  *         description: Current resolved area list
@@ -188,7 +196,7 @@ router.use(authenticateToken);
 
 router.post("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "write"), tukCreateValidator, validateRequest, createTukTuk);
 router.get("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "list"), getTukTuks);
-router.get("/current-area", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTuksCurrentArea);
+router.get("/current-area", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tukCurrentArea", "read"), getTuksCurrentArea);
 router.get("/:id/last-location", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTukLastLocation);
 router.get("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTukById);
 router.put("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "write"), tukUpdateValidator, validateRequest, updateTuk);

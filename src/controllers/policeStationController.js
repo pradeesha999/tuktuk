@@ -1,17 +1,28 @@
 // Police station controller: CRUD + filters for district / province scope.
 import District from "../models/District.js";
 import PoliceStation from "../models/PoliceStation.js";
+import { mergeActive } from "../utils/softDelete.js";
+
+const stripDeletedAt = (body) => {
+  const copy = { ...body };
+  delete copy.deletedAt;
+  return copy;
+};
 
 const populateDistrictProvince = {
   path: "district",
-  populate: { path: "province" }
+  match: { deletedAt: null },
+  populate: { path: "province", match: { deletedAt: null } }
 };
 
 // Create one police station record.
 export const createPoliceStation = async (req, res) => {
   try {
+    const districtOk = await District.findOne(mergeActive({ _id: req.body.district }));
+    if (!districtOk) return res.status(400).json({ error: "District not found or inactive" });
+
     const station = await PoliceStation.create(req.body);
-    const populated = await PoliceStation.findById(station._id).populate(populateDistrictProvince);
+    const populated = await PoliceStation.findOne(mergeActive({ _id: station._id })).populate(populateDistrictProvince);
     res.status(201).json(populated);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -27,12 +38,12 @@ export const getPoliceStations = async (req, res) => {
     if (districtId) {
       filter.district = districtId;
     } else if (provinceId) {
-      const districts = await District.find({ province: provinceId }).select("_id").lean();
+      const districts = await District.find(mergeActive({ province: provinceId })).select("_id").lean();
       const ids = districts.map((d) => d._id);
       filter.district = { $in: ids };
     }
 
-    const stations = await PoliceStation.find(filter).populate(populateDistrictProvince).sort({ name: 1 });
+    const stations = await PoliceStation.find(mergeActive(filter)).populate(populateDistrictProvince).sort({ name: 1 });
     return res.json(stations);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -42,7 +53,7 @@ export const getPoliceStations = async (req, res) => {
 // Get one police station by Mongo id.
 export const getPoliceStationById = async (req, res) => {
   try {
-    const station = await PoliceStation.findById(req.params.id).populate(populateDistrictProvince);
+    const station = await PoliceStation.findOne(mergeActive({ _id: req.params.id })).populate(populateDistrictProvince);
     if (!station) return res.status(404).json({ error: "Not found" });
     res.json(station);
   } catch (error) {
@@ -53,24 +64,34 @@ export const getPoliceStationById = async (req, res) => {
 // Update one police station by Mongo id.
 export const updatePoliceStation = async (req, res) => {
   try {
-    const updated = await PoliceStation.findByIdAndUpdate(req.params.id, req.body, {
+    if (req.body.district) {
+      const districtOk = await District.findOne(mergeActive({ _id: req.body.district }));
+      if (!districtOk) return res.status(400).json({ error: "District not found or inactive" });
+    }
+
+    const payload = stripDeletedAt(req.body);
+    const updated = await PoliceStation.findOneAndUpdate(mergeActive({ _id: req.params.id }), payload, {
       new: true,
       runValidators: true
     });
     if (!updated) return res.status(404).json({ error: "Not found" });
-    const station = await PoliceStation.findById(updated._id).populate(populateDistrictProvince);
+    const station = await PoliceStation.findOne(mergeActive({ _id: updated._id })).populate(populateDistrictProvince);
     res.json(station);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-// Delete one police station by Mongo id.
+// Soft-delete one police station by Mongo id.
 export const deletePoliceStation = async (req, res) => {
   try {
-    const station = await PoliceStation.findByIdAndDelete(req.params.id);
+    const station = await PoliceStation.findOneAndUpdate(
+      mergeActive({ _id: req.params.id }),
+      { deletedAt: new Date() },
+      { new: true }
+    );
     if (!station) return res.status(404).json({ error: "Not found" });
-    res.json({ message: "Deleted", id: station._id });
+    res.json({ message: "Deleted", id: station._id, deletedAt: station.deletedAt });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

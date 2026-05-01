@@ -19,6 +19,11 @@ const policeStationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "District",
       required: true
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true
     }
   },
   { timestamps: true }

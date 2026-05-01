@@ -24,6 +24,11 @@ const tukSchema = new mongoose.Schema(
     policeStation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PoliceStation"
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true
     }
   },
   { timestamps: true }
