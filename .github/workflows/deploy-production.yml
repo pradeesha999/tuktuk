@@ -1,8 +1,11 @@
 name: Deploy production
 
+# Runs after a successful test on `main` (push or merged PR), or when you click
+# Actions → Deploy production → Run workflow. CI on `dev` does not touch EC2.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -32,13 +35,13 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
           script: |
-            set -e
-            cd ${{ secrets.EC2_APP_DIR }}
+            set -euo pipefail
+            cd "${{ secrets.EC2_APP_DIR }}"
             echo "Deploy dir: $(pwd)"
             git fetch origin main
             git checkout main
-            git pull origin main
+            git reset --hard origin/main
             echo "Deployed commit: $(git rev-parse --short HEAD)"
             npm ci --omit=dev
-            pm2 restart ${{ secrets.PM2_APP_NAME }} || pm2 start server.js --name ${{ secrets.PM2_APP_NAME }}
+            pm2 restart "${{ secrets.PM2_APP_NAME }}" || pm2 start server.js --name "${{ secrets.PM2_APP_NAME }}"
             pm2 save
