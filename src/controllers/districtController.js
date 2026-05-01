@@ -11,7 +11,8 @@ const stripDeletedAt = (body) => {
 
 const populateProvinceActive = {
   path: "province",
-  match: { deletedAt: null }
+  match: { deletedAt: null },
+  select: "-boundary"
 };
 
 // Create one district record.
@@ -33,7 +34,11 @@ export const getDistricts = async (req, res) => {
   try {
     const { provinceId } = req.query;
     const filter = provinceId ? mergeActive({ province: provinceId }) : mergeActive();
-    const districts = await District.find(filter).populate(populateProvinceActive).sort({ name: 1 });
+    let query = District.find(filter).populate(populateProvinceActive).sort({ name: 1 });
+    if (req.query.includeBoundary !== "true") {
+      query = query.select("-boundary");
+    }
+    const districts = await query;
     return res.json(districts);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -43,7 +48,11 @@ export const getDistricts = async (req, res) => {
 // Get one district by Mongo id.
 export const getDistrictById = async (req, res) => {
   try {
-    const district = await District.findOne(mergeActive({ _id: req.params.id })).populate(populateProvinceActive);
+    let query = District.findOne(mergeActive({ _id: req.params.id })).populate(populateProvinceActive);
+    if (req.query.includeBoundary !== "true") {
+      query = query.select("-boundary");
+    }
+    const district = await query;
     if (!district) return res.status(404).json({ error: "Not found" });
     res.json(district);
   } catch (error) {

@@ -1,6 +1,28 @@
 // Location ping model: stores periodic GPS updates from tracking devices.
 import mongoose from "mongoose";
 
+// Explicit sub-schema so GeoJSON field name `type` is not mistaken for Mongoose's path `type`
+// (insertMany/casting otherwise can persist `{ type: "Point" }` without coordinates — MongoDB 16755).
+const geoPointSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ["Point"],
+      required: true,
+      default: "Point"
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator: (v) => Array.isArray(v) && v.length === 2,
+        message: "Point coordinates must be [longitude, latitude]"
+      }
+    }
+  },
+  { _id: false }
+);
+
 const locationPingSchema = new mongoose.Schema(
   {
     tuk: {
@@ -22,15 +44,8 @@ const locationPingSchema = new mongoose.Schema(
       max: 180
     },
     point: {
-      type: {
-        type: String,
-        enum: ["Point"],
-        default: "Point"
-      },
-      coordinates: {
-        type: [Number],
-        default: undefined
-      }
+      type: geoPointSchema,
+      required: true
     },
     pingedAt: {
       type: Date,
