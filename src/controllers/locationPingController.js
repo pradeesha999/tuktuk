@@ -2,15 +2,21 @@
 import District from "../models/District.js";
 import LocationPing from "../models/LocationPing.js";
 import Province from "../models/Province.js";
+import Tuk from "../models/Tuk.js";
+import { mergeActive } from "../utils/softDelete.js";
 
 const pingPopulate = {
   path: "tuk",
-  populate: [{ path: "district", populate: { path: "province" } }, { path: "policeStation" }]
+  match: { deletedAt: null },
+  populate: [
+    { path: "district", match: { deletedAt: null }, populate: { path: "province", match: { deletedAt: null } } },
+    { path: "policeStation", match: { deletedAt: null } }
+  ]
 };
 
 const pingAreaPopulate = [
-  { path: "resolvedDistrict", populate: { path: "province" } },
-  { path: "resolvedProvince" }
+  { path: "resolvedDistrict", populate: { path: "province", match: { deletedAt: null } } },
+  { path: "resolvedProvince", match: { deletedAt: null } }
 ];
 
 const resolveAdministrativeArea = async (longitude, latitude) => {
@@ -19,9 +25,11 @@ const resolveAdministrativeArea = async (longitude, latitude) => {
     coordinates: [longitude, latitude]
   };
 
-  const district = await District.findOne({
-    boundary: { $geoIntersects: { $geometry: point } }
-  })
+  const district = await District.findOne(
+    mergeActive({
+      boundary: { $geoIntersects: { $geometry: point } }
+    })
+  )
     .select("_id province")
     .lean();
 
@@ -33,9 +41,11 @@ const resolveAdministrativeArea = async (longitude, latitude) => {
     };
   }
 
-  const province = await Province.findOne({
-    boundary: { $geoIntersects: { $geometry: point } }
-  })
+  const province = await Province.findOne(
+    mergeActive({
+      boundary: { $geoIntersects: { $geometry: point } }
+    })
+  )
     .select("_id")
     .lean();
 
@@ -49,6 +59,9 @@ const resolveAdministrativeArea = async (longitude, latitude) => {
 // Create one location ping record.
 export const createLocationPing = async (req, res) => {
   try {
+    const tukAlive = await Tuk.findOne(mergeActive({ _id: req.body.tuk }));
+    if (!tukAlive) return res.status(404).json({ error: "Tuk not found or inactive" });
+
     const area = await resolveAdministrativeArea(req.body.longitude, req.body.latitude);
     const ping = await LocationPing.create({
       ...req.body,
@@ -63,7 +76,7 @@ export const createLocationPing = async (req, res) => {
   }
 };
 
-// Get movement logs with tuk and geography filters.
+// Get movement logs with tuk and geography filters (pings for active tuks only).
 export const getLocationPings = async (req, res) => {
   try {
     const { tukId, districtId, provinceId, from, to } = req.query;
@@ -83,8 +96,18 @@ export const getLocationPings = async (req, res) => {
       filter.resolvedProvince = provinceId;
     }
 
+    const activeTuks = await Tuk.find(mergeActive()).select("_id").lean();
+    const activeIds = activeTuks.map((t) => t._id);
+    if (activeIds.length === 0) {
+      return res.json([]);
+    }
+
     if (tukId) {
+      const allowed = activeIds.some((id) => String(id) === String(tukId));
+      if (!allowed) return res.json([]);
       filter.tuk = tukId;
+    } else {
+      filter.tuk = { $in: activeIds };
     }
 
     const pings = await LocationPing.find(filter).populate([pingPopulate, ...pingAreaPopulate]).sort({ pingedAt: -1 });

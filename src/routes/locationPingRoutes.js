@@ -1,7 +1,7 @@
 // Location ping routes: maps movement log endpoints to controller actions.
 import express from "express";
 import { createLocationPing, getLocationPings } from "../controllers/locationPingController.js";
-import { applyScope, authenticateToken, authorizeRoles } from "../middleware/authMiddleware.js";
+import { applyScope, authenticateToken, authorizeRoles, enforcePingWriteScope } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validationMiddleware.js";
 import { locationPingCreateValidator } from "../validators/resourceValidators.js";
 
@@ -95,6 +95,7 @@ router.post(
   applyScope("locationPing", "write"),
   locationPingCreateValidator,
   validateRequest,
+  enforcePingWriteScope,
   createLocationPing
 );
 router.get(

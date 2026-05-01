@@ -29,6 +29,11 @@ const districtSchema = new mongoose.Schema(
       coordinates: {
         type: Array
       }
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true
     }
   },
   { timestamps: true }
