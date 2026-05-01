@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import dotenv from "dotenv";
@@ -17,6 +18,9 @@ if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = "test-jwt-secret-for-ci";
 }
 
+/** Unique suffix so MongoDB unique indexes never collide on shared Atlas CI databases. */
+const mk = () => crypto.randomBytes(4).toString("hex");
+
 const withAuth = (reqBuilder) => reqBuilder.set("Authorization", `Bearer ${authToken}`);
 
 test.before(async () => {
@@ -26,7 +30,6 @@ test.before(async () => {
   }
 
   const dbName = process.env.TEST_DB_NAME || "webapi_test";
-  // Always isolated from production: never uses MONGO_DB_NAME / webapi_prod.
 
   await mongoose.connect(testMongoUri, { dbName });
 });
@@ -40,7 +43,11 @@ test.after(async () => {
 
 test.beforeEach(async () => {
   const collections = await mongoose.connection.db.collections();
-  await Promise.all(collections.map((collection) => collection.deleteMany({})));
+  await Promise.all(
+    collections
+      .filter((c) => !c.collectionName.startsWith("system."))
+      .map((collection) => collection.deleteMany({}))
+  );
 
   authToken = jwt.sign(
     { username: "ci_hq_admin", role: "HQ_ADMIN" },
@@ -50,16 +57,20 @@ test.beforeEach(async () => {
 });
 
 test("province -> district -> station linked retrieval", async () => {
-  const provinceRes = await withAuth(request(app).post("/api/v1/province")).send({ name: "Western", code: "WP" });
-  assert.equal(provinceRes.status, 201);
+  const id = mk();
+  const provinceRes = await withAuth(request(app).post("/api/v1/province")).send({
+    name: `Western_${id}`,
+    code: `WP${id.toUpperCase()}`
+  });
+  assert.equal(provinceRes.status, 201, JSON.stringify(provinceRes.body));
 
   const districtRes = await withAuth(request(app).post("/api/v1/district"))
-    .send({ name: "Colombo", code: "CMB", province: provinceRes.body._id });
-  assert.equal(districtRes.status, 201);
+    .send({ name: `Colombo_${id}`, code: `CMB${id.toUpperCase()}`, province: provinceRes.body._id });
+  assert.equal(districtRes.status, 201, JSON.stringify(districtRes.body));
 
   const stationRes = await withAuth(request(app).post("/api/v1/police-station"))
-    .send({ name: "Colombo Police Station", code: "CMB-PS", district: districtRes.body._id });
-  assert.equal(stationRes.status, 201);
+    .send({ name: `Colombo Police Station ${id}`, code: `CMB${id.toUpperCase()}PS`, district: districtRes.body._id });
+  assert.equal(stationRes.status, 201, JSON.stringify(stationRes.body));
 
   const listRes = await withAuth(request(app).get(`/api/v1/police-station?provinceId=${provinceRes.body._id}`));
   assert.equal(listRes.status, 200);
@@ -67,25 +78,33 @@ test("province -> district -> station linked retrieval", async () => {
   const first = listRes.body[0];
   assert.ok(first?.district, `missing district on station: ${JSON.stringify(first)}`);
   assert.ok(first.district?.province, `missing province populate: ${JSON.stringify(first.district)}`);
-  assert.equal(first.district.province.name, "Western");
+  assert.equal(first.district.province.name, `Western_${id}`);
 });
 
 test("create/list tuk with filters", async () => {
-  const province = await withAuth(request(app).post("/api/v1/province")).send({ name: "Central", code: "CP" });
+  const id = mk();
+  const province = await withAuth(request(app).post("/api/v1/province")).send({
+    name: `Central_${id}`,
+    code: `CP${id.toUpperCase()}`
+  });
+  assert.equal(province.status, 201, JSON.stringify(province.body));
+
   const district = await withAuth(request(app).post("/api/v1/district"))
-    .send({ name: "Kandy", code: "KDY", province: province.body._id });
+    .send({ name: `Kandy_${id}`, code: `KDY${id.toUpperCase()}`, province: province.body._id });
+  assert.equal(district.status, 201, JSON.stringify(district.body));
 
   const station = await withAuth(request(app).post("/api/v1/police-station"))
-    .send({ name: "Kandy Police Station", code: "KDY-PS", district: district.body._id });
+    .send({ name: `Kandy Police Station ${id}`, code: `KDY${id.toUpperCase()}PS`, district: district.body._id });
+  assert.equal(station.status, 201, JSON.stringify(station.body));
 
   const tuk = await withAuth(request(app).post("/api/v1/tuk")).send({
-    registrationNumber: "WP-1234",
-    deviceId: "device-0001",
+    registrationNumber: `WP-1234-${id}`,
+    deviceId: `device-0001-${id}`,
     ownerName: "Jane",
     district: district.body._id,
     policeStation: station.body._id
   });
-  assert.equal(tuk.status, 201);
+  assert.equal(tuk.status, 201, JSON.stringify(tuk.body));
 
   const districtFiltered = await withAuth(request(app).get(`/api/v1/tuk?districtId=${district.body._id}`));
   assert.equal(districtFiltered.status, 200);
@@ -97,15 +116,24 @@ test("create/list tuk with filters", async () => {
 });
 
 test("create/list pings with time-window filters", async () => {
-  const province = await withAuth(request(app).post("/api/v1/province")).send({ name: "Southern", code: "SP" });
+  const id = mk();
+  const province = await withAuth(request(app).post("/api/v1/province")).send({
+    name: `Southern_${id}`,
+    code: `SP${id.toUpperCase()}`
+  });
+  assert.equal(province.status, 201, JSON.stringify(province.body));
+
   const district = await withAuth(request(app).post("/api/v1/district"))
-    .send({ name: "Galle", code: "GAL", province: province.body._id });
+    .send({ name: `Galle_${id}`, code: `GAL${id.toUpperCase()}`, province: province.body._id });
+  assert.equal(district.status, 201, JSON.stringify(district.body));
+
   const tuk = await withAuth(request(app).post("/api/v1/tuk")).send({
-    registrationNumber: "SP-1111",
-    deviceId: "device-1111",
+    registrationNumber: `SP-1111-${id}`,
+    deviceId: `device-1111-${id}`,
     ownerName: "Alex",
     district: district.body._id
   });
+  assert.equal(tuk.status, 201, JSON.stringify(tuk.body));
 
   const oldTime = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const newTime = new Date().toISOString();
@@ -116,7 +144,7 @@ test("create/list pings with time-window filters", async () => {
     longitude: 80.21,
     pingedAt: oldTime
   });
-  assert.equal(ping1.status, 201);
+  assert.equal(ping1.status, 201, JSON.stringify(ping1.body));
 
   const ping2 = await withAuth(request(app).post("/api/v1/location-ping")).send({
     tuk: tuk.body._id,
@@ -124,7 +152,7 @@ test("create/list pings with time-window filters", async () => {
     longitude: 80.22,
     pingedAt: newTime
   });
-  assert.equal(ping2.status, 201);
+  assert.equal(ping2.status, 201, JSON.stringify(ping2.body));
 
   const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const list = await withAuth(request(app).get(`/api/v1/location-ping?tukId=${tuk.body._id}&from=${encodeURIComponent(from)}`));
@@ -142,28 +170,34 @@ test("create/list pings with time-window filters", async () => {
 });
 
 test("auth/register: HQ_ADMIN can register station officer and new user can login", async () => {
-  const province = await withAuth(request(app).post("/api/v1/province")).send({ name: "Western", code: "WP" });
-  assert.equal(province.status, 201);
+  const id = mk();
+  const province = await withAuth(request(app).post("/api/v1/province")).send({
+    name: `Western_${id}`,
+    code: `WP${id.toUpperCase()}`
+  });
+  assert.equal(province.status, 201, JSON.stringify(province.body));
+
   const district = await withAuth(request(app).post("/api/v1/district"))
-    .send({ name: "Colombo", code: "CMB", province: province.body._id });
-  assert.equal(district.status, 201);
+    .send({ name: `Colombo_${id}`, code: `CMB${id.toUpperCase()}`, province: province.body._id });
+  assert.equal(district.status, 201, JSON.stringify(district.body));
+
   const station = await withAuth(request(app).post("/api/v1/police-station"))
-    .send({ name: "Colombo Police Station", code: "CMB-PS", district: district.body._id });
-  assert.equal(station.status, 201);
+    .send({ name: `Colombo Police Station ${id}`, code: `CMB${id.toUpperCase()}PS`, district: district.body._id });
+  assert.equal(station.status, 201, JSON.stringify(station.body));
 
   const register = await withAuth(request(app).post("/api/v1/auth/register")).send({
-    username: "station.ops",
+    username: `station.ops.${id}`,
     password: "StrongPass123!",
     role: "STATION_OFFICER",
     stationId: station.body._id
   });
 
   assert.equal(register.status, 201);
-  assert.equal(register.body.username, "station.ops");
+  assert.equal(register.body.username, `station.ops.${id}`);
   assert.equal(register.body.role, "STATION_OFFICER");
 
   const login = await request(app).post("/api/v1/auth/login").send({
-    username: "station.ops",
+    username: `station.ops.${id}`,
     password: "StrongPass123!"
   });
   assert.equal(login.status, 200);
