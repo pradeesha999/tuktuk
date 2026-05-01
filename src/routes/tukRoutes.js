@@ -5,7 +5,7 @@ import {
   getTukTuks,
   getTukById,
   getTukLastLocation,
-  getTuksCurrentArea,
+  getTuksLastPingArea,
   updateTuk,
   deleteTuk
 } from "../controllers/tukController.js";
@@ -19,7 +19,7 @@ const router = express.Router();
  * @swagger
  * tags:
  *   - name: Tuk
- *     description: Tuk management and live location
+ *     description: Tuk management and location (last ping / history)
  */
 /**
  * @swagger
@@ -196,7 +196,15 @@ router.use(authenticateToken);
 
 router.post("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "write"), tukCreateValidator, validateRequest, createTukTuk);
 router.get("/", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "list"), getTukTuks);
-router.get("/current-area", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tukCurrentArea", "read"), getTuksCurrentArea);
+const lastPingAreaChain = [
+  authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"),
+  applyScope("tukLastPingArea", "read"),
+  getTuksLastPingArea
+];
+
+router.get("/last-ping-area", ...lastPingAreaChain);
+/** @deprecated Use GET /tuk/last-ping-area — same handler */
+router.get("/current-area", ...lastPingAreaChain);
 router.get("/:id/last-location", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTukLastLocation);
 router.get("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), getTukById);
 router.put("/:id", authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"), applyScope("tuk", "write"), tukUpdateValidator, validateRequest, updateTuk);

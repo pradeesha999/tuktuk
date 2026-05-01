@@ -18,10 +18,14 @@ export const createProvince = async (req, res) => {
   }
 };
 
-// Get all provinces (active only).
+// Get all provinces (active only). Omits GeoJSON boundaries by default (large payloads break Swagger/clients).
 export const getProvinces = async (req, res) => {
   try {
-    const provinces = await Province.find(mergeActive()).sort({ name: 1 });
+    let query = Province.find(mergeActive()).sort({ name: 1 });
+    if (req.query.includeBoundary !== "true") {
+      query = query.select("-boundary");
+    }
+    const provinces = await query;
     return res.json(provinces);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -31,7 +35,11 @@ export const getProvinces = async (req, res) => {
 // Get one province by Mongo id (active only).
 export const getProvinceById = async (req, res) => {
   try {
-    const province = await Province.findOne(mergeActive({ _id: req.params.id }));
+    let query = Province.findOne(mergeActive({ _id: req.params.id }));
+    if (req.query.includeBoundary !== "true") {
+      query = query.select("-boundary");
+    }
+    const province = await query;
     if (!province) return res.status(404).json({ error: "Not found" });
     res.json(province);
   } catch (error) {

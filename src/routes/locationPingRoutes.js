@@ -1,7 +1,12 @@
 // Location ping routes: maps movement log endpoints to controller actions.
 import express from "express";
 import { createLocationPing, getLocationPings } from "../controllers/locationPingController.js";
-import { applyScope, authenticateToken, authorizeRoles, enforcePingWriteScope } from "../middleware/authMiddleware.js";
+import {
+  applyScope,
+  authenticateToken,
+  authorizeRoles,
+  bindDeviceTukForPing
+} from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validationMiddleware.js";
 import { locationPingCreateValidator } from "../validators/resourceValidators.js";
 
@@ -31,7 +36,7 @@ const router = express.Router();
  *             properties:
  *               tuk:
  *                 type: string
- *                 description: Optional for HQ/admin users; DEVICE role is auto-bound by token scope.
+ *                 description: Omitted for DEVICE tokens — `tukId` is taken from the JWT.
  *                 example: 64f3f3f3f3f3f3f3f3f3f3f3
  *               latitude:
  *                 type: number
@@ -91,16 +96,15 @@ router.use(authenticateToken);
 
 router.post(
   "/",
-  authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER", "DEVICE"),
-  applyScope("locationPing", "write"),
+  authorizeRoles("DEVICE"),
+  bindDeviceTukForPing,
   locationPingCreateValidator,
   validateRequest,
-  enforcePingWriteScope,
   createLocationPing
 );
 router.get(
   "/",
-  authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"),
+  authorizeRoles("HQ_ADMIN", "PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER", "DEVICE"),
   applyScope("locationPing", "list"),
   getLocationPings
 );

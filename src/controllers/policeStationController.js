@@ -12,7 +12,8 @@ const stripDeletedAt = (body) => {
 const populateDistrictProvince = {
   path: "district",
   match: { deletedAt: null },
-  populate: { path: "province", match: { deletedAt: null } }
+  select: "-boundary",
+  populate: { path: "province", match: { deletedAt: null }, select: "-boundary" }
 };
 
 // Create one police station record.

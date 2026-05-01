@@ -172,13 +172,13 @@ Full request bodies and parameters are in Swagger: `http://localhost:5000/api-do
 - `GET /tuk` (optional `?provinceId=`, `?districtId=`, `?stationId=`)
 - `GET /tuk/:id`
 - `GET /tuk/:id/last-location`
-- `GET /tuk/current-area` (latest resolved district/province per tuk, optional `?provinceId=` / `?districtId=`)
+- `GET /tuk/last-ping-area` (each tuk's **last ping** within max age, with resolved district/province; optional `?provinceId=` / `?districtId=` / `maxAgeMinutes=`; legacy alias `GET /tuk/current-area`)
 - `PUT /tuk/:id`
 - `DELETE /tuk/:id`
 
 ### Location Ping
-- `POST /location-ping`
-- `GET /location-ping` (optional `?tukId=`, `?provinceId=`, `?districtId=`, `?from=`, `?to=`)
+- `POST /location-ping` (**DEVICE** JWT must include `tukId`; admins do not post pings through this endpoint)
+- `GET /location-ping` (officers + DEVICE; **limit/skip** pagination; officers see **all pings for home-jurisdiction tuks**, and **only in-area pings** for foreign tuks — plate-only `tuk` payload for those)
 
 `provinceId` and `districtId` filters use the **resolved area** computed from each ping's coordinates against the GeoJSON boundaries seeded by `seed:geo-boundaries`.
 

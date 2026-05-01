@@ -12,23 +12,14 @@ const stripDeletedAt = (body) => {
   return copy;
 };
 
-const populateTukGeo = [
-  {
-    path: "district",
-    match: { deletedAt: null },
-    populate: { path: "province", match: { deletedAt: null } }
-  },
-  {
-    path: "policeStation",
-    match: { deletedAt: null },
-    populate: {
-      path: "district",
-      match: { deletedAt: null },
-      populate: { path: "province", match: { deletedAt: null } }
-    }
-  }
-];
-
+import {
+  populateTukGeoCompact as populateTukGeo
+} from "../utils/geoResponse.js";
+import {
+  buildPingVisibilityClause,
+  homeTukIdStrings
+} from "../utils/jurisdictionPingScope.js";
+import { getEffectiveDistrictId } from "../middleware/authMiddleware.js";
 const isTukAllowed = (tuk, auth) => {
   if (!auth || auth.role === "HQ_ADMIN") return true;
   if (auth.role === "PROVINCE_ADMIN") {
@@ -93,24 +84,29 @@ export const getTukById = async (req, res) => {
   try {
     const tuk = await Tuk.findOne(mergeActive({ _id: req.params.id })).populate(populateTukGeo);
     if (!tuk) return res.status(404).json({ error: "Not found" });
-    if (!isTukAllowed(tuk, req.auth)) return res.status(403).json({ error: "Forbidden" });
-    res.json(tuk);
+    if (isTukAllowed(tuk, req.auth)) {
+      return res.json(tuk);
+    }
+    if (["PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"].includes(req.auth?.role)) {
+      return res.json({
+        _id: tuk._id,
+        registrationNumber: tuk.registrationNumber,
+        scope: "outside_home_jurisdiction"
+      });
+    }
+    return res.status(403).json({ error: "Forbidden" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-// Get last known location for one tuk.
+// Get last known location for one tuk (home admins see latest ping anywhere; others only while ping resolves inside their province/district).
 export const getTukLastLocation = async (req, res) => {
   try {
     const tuk = await Tuk.findOne(mergeActive({ _id: req.params.id })).populate(populateTukGeo);
     if (!tuk) return res.status(404).json({ error: "Not found" });
-    if (!isTukAllowed(tuk, req.auth)) return res.status(403).json({ error: "Forbidden" });
 
-    const ping = await LocationPing.findOne({ tuk: tuk._id }).sort({ pingedAt: -1 });
-    if (!ping) return res.status(404).json({ error: "No location data" });
-
-    return res.json({
+    const jsonBody = (ping) => ({
       tukId: tuk._id,
       latitude: ping.latitude,
       longitude: ping.longitude,
@@ -120,17 +116,54 @@ export const getTukLastLocation = async (req, res) => {
       resolvedDistrict: ping.resolvedDistrict || null,
       resolvedProvince: ping.resolvedProvince || null
     });
+
+    if (isTukAllowed(tuk, req.auth)) {
+      const ping = await LocationPing.findOne({ tuk: tuk._id }).sort({ pingedAt: -1 });
+      if (!ping) return res.status(404).json({ error: "No location data" });
+      return res.json(jsonBody(ping));
+    }
+
+    const auth = req.auth;
+    let ping = null;
+
+    if (auth.role === "DISTRICT_OFFICER" && auth.districtId) {
+      ping = await LocationPing.findOne({
+        tuk: tuk._id,
+        resolvedDistrict: auth.districtId
+      }).sort({ pingedAt: -1 });
+    } else if (auth.role === "PROVINCE_ADMIN" && auth.provinceId) {
+      ping = await LocationPing.findOne({
+        tuk: tuk._id,
+        resolvedProvince: auth.provinceId
+      }).sort({ pingedAt: -1 });
+    } else if (auth.role === "STATION_OFFICER") {
+      const eff = await getEffectiveDistrictId(auth);
+      if (eff) {
+        ping = await LocationPing.findOne({
+          tuk: tuk._id,
+          resolvedDistrict: eff
+        }).sort({ pingedAt: -1 });
+      }
+    }
+
+    if (!ping) {
+      return res.status(404).json({ error: "No location data in your jurisdiction for this tuk" });
+    }
+    return res.json(jsonBody(ping));
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
 };
 
-// Get latest known area (resolved from GeoJSON) per tuk, only if last ping is recent.
-export const getTuksCurrentArea = async (req, res) => {
+// Tuks with their most recent ping (within max age), resolved district/province from GeoJSON — excludes stale tracks as time passes.
+export const getTuksLastPingArea = async (req, res) => {
   try {
+    const auth = req.auth;
     const { provinceId, districtId } = req.query;
 
-    const defaultAge = Number.parseInt(process.env.CURRENT_AREA_MAX_AGE_MINUTES || "60", 10);
+    const envMinutes =
+      process.env.LAST_PING_AREA_MAX_AGE_MINUTES || process.env.CURRENT_AREA_MAX_AGE_MINUTES || "60";
+    const defaultAge = Number.parseInt(envMinutes, 10);
     const rawMax = req.query.maxAgeMinutes;
     const maxAgeMinutes =
       rawMax === undefined || rawMax === "" ? defaultAge : Number.parseInt(String(rawMax), 10);
@@ -139,24 +172,28 @@ export const getTuksCurrentArea = async (req, res) => {
     }
 
     const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
-    const pingFilter = { pingedAt: { $gte: cutoff } };
+    const matchParts = [{ pingedAt: { $gte: cutoff } }];
 
-    if (provinceId) {
-      if (!mongoose.isValidObjectId(provinceId)) return res.status(400).json({ error: "Invalid provinceId" });
-      pingFilter.resolvedProvince = new mongoose.Types.ObjectId(provinceId);
-    }
-    if (districtId) {
-      if (!mongoose.isValidObjectId(districtId)) return res.status(400).json({ error: "Invalid districtId" });
-      pingFilter.resolvedDistrict = new mongoose.Types.ObjectId(districtId);
+    if (auth.role === "HQ_ADMIN") {
+      if (provinceId) {
+        if (!mongoose.isValidObjectId(provinceId)) return res.status(400).json({ error: "Invalid provinceId" });
+        matchParts.push({ resolvedProvince: new mongoose.Types.ObjectId(provinceId) });
+      }
+      if (districtId) {
+        if (!mongoose.isValidObjectId(districtId)) return res.status(400).json({ error: "Invalid districtId" });
+        matchParts.push({ resolvedDistrict: new mongoose.Types.ObjectId(districtId) });
+      }
+    } else {
+      const vis = await buildPingVisibilityClause(auth);
+      if (vis) {
+        matchParts.push(vis);
+      }
     }
 
-    const stationScope = req.geoScope?.restrictToStationId;
-    if (stationScope && !mongoose.isValidObjectId(stationScope)) {
-      return res.status(400).json({ error: "Invalid station scope" });
-    }
+    const pingMatch = matchParts.length === 1 ? matchParts[0] : { $and: matchParts };
 
     const pipeline = [
-      { $match: pingFilter },
+      { $match: pingMatch },
       { $sort: { pingedAt: -1 } },
       { $group: { _id: "$tuk", ping: { $first: "$$ROOT" } } },
       {
@@ -168,29 +205,26 @@ export const getTuksCurrentArea = async (req, res) => {
         }
       },
       { $unwind: "$tuk" },
-      { $match: activeTukDocMatch }
-    ];
-
-    if (stationScope) {
-      pipeline.push({
-        $match: { "tuk.policeStation": new mongoose.Types.ObjectId(stationScope) }
-      });
-    }
-
-    pipeline.push(
+      { $match: activeTukDocMatch },
       {
         $lookup: {
           from: "districts",
-          localField: "ping.resolvedDistrict",
-          foreignField: "_id",
+          let: { did: "$ping.resolvedDistrict" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$did"] } } },
+            { $project: { boundary: 0 } }
+          ],
           as: "resolvedDistrict"
         }
       },
       {
         $lookup: {
           from: "provinces",
-          localField: "ping.resolvedProvince",
-          foreignField: "_id",
+          let: { pid: "$ping.resolvedProvince" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$pid"] } } },
+            { $project: { boundary: 0 } }
+          ],
           as: "resolvedProvince"
         }
       },
@@ -206,10 +240,35 @@ export const getTuksCurrentArea = async (req, res) => {
           resolvedProvince: { $arrayElemAt: ["$resolvedProvince", 0] }
         }
       }
-    );
+    ];
 
     const latest = await LocationPing.aggregate(pipeline);
-    return res.json(latest);
+
+    if (!auth || auth.role === "HQ_ADMIN") {
+      return res.json(latest);
+    }
+
+    const homeSet = await homeTukIdStrings(auth);
+    const trimmed = latest.map((row) => {
+      const tid = String(row.tukId);
+      if (homeSet && homeSet.has(tid)) return row;
+      return {
+        tukId: row.tukId,
+        registrationNumber: row.registrationNumber,
+        pingedAt: row.pingedAt,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        resolvedDistrict: row.resolvedDistrict
+          ? { _id: row.resolvedDistrict._id, name: row.resolvedDistrict.name, code: row.resolvedDistrict.code }
+          : null,
+        resolvedProvince: row.resolvedProvince
+          ? { _id: row.resolvedProvince._id, name: row.resolvedProvince.name, code: row.resolvedProvince.code }
+          : null,
+        scope: "transit_in_jurisdiction"
+      };
+    });
+
+    return res.json(trimmed);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

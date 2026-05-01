@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
 import app from "../src/app.js";
+import District from "../src/models/District.js";
 
 dotenv.config();
 
@@ -138,20 +139,30 @@ test("create/list pings with time-window filters", async () => {
   const oldTime = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const newTime = new Date().toISOString();
 
-  const ping1 = await withAuth(request(app).post("/api/v1/location-ping")).send({
-    tuk: tuk.body._id,
-    latitude: 6.03,
-    longitude: 80.21,
-    pingedAt: oldTime
-  });
+  const deviceTok = jwt.sign(
+    { username: `device_${id}`, role: "DEVICE", tukId: tuk.body._id },
+    process.env.JWT_SECRET || "change-this-secret",
+    { expiresIn: "15m" }
+  );
+
+  const ping1 = await request(app)
+    .post("/api/v1/location-ping")
+    .set("Authorization", `Bearer ${deviceTok}`)
+    .send({
+      latitude: 6.03,
+      longitude: 80.21,
+      pingedAt: oldTime
+    });
   assert.equal(ping1.status, 201, JSON.stringify(ping1.body));
 
-  const ping2 = await withAuth(request(app).post("/api/v1/location-ping")).send({
-    tuk: tuk.body._id,
-    latitude: 6.04,
-    longitude: 80.22,
-    pingedAt: newTime
-  });
+  const ping2 = await request(app)
+    .post("/api/v1/location-ping")
+    .set("Authorization", `Bearer ${deviceTok}`)
+    .send({
+      latitude: 6.04,
+      longitude: 80.22,
+      pingedAt: newTime
+    });
   assert.equal(ping2.status, 201, JSON.stringify(ping2.body));
 
   const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -167,6 +178,74 @@ test("create/list pings with time-window filters", async () => {
   const lastLocation = await withAuth(request(app).get(`/api/v1/tuk/${tukId}/last-location`));
   assert.equal(lastLocation.status, 200);
   assert.equal(typeof lastLocation.body.latitude, "number");
+});
+
+test("location pings list filters by provinceId when coords resolve inside boundary", async () => {
+  const id = mk();
+  const province = await withAuth(request(app).post("/api/v1/province")).send({
+    name: `GeoProvince_${id}`,
+    code: `GP${id.toUpperCase()}`
+  });
+  assert.equal(province.status, 201, JSON.stringify(province.body));
+
+  const district = await withAuth(request(app).post("/api/v1/district"))
+    .send({ name: `GeoDistrict_${id}`, code: `GD${id.toUpperCase()}`, province: province.body._id });
+  assert.equal(district.status, 201, JSON.stringify(district.body));
+
+  const polygon = {
+    type: "Polygon",
+    coordinates: [
+      [
+        [80.2, 6.02],
+        [80.23, 6.02],
+        [80.23, 6.06],
+        [80.2, 6.06],
+        [80.2, 6.02]
+      ]
+    ]
+  };
+  await District.updateOne({ _id: district.body._id }, { $set: { boundary: polygon } });
+
+  const tuk = await withAuth(request(app).post("/api/v1/tuk")).send({
+    registrationNumber: `GP-9999-${id}`,
+    deviceId: `device-gp-${id}`,
+    ownerName: "Geo tester",
+    district: district.body._id
+  });
+  assert.equal(tuk.status, 201, JSON.stringify(tuk.body));
+
+  const deviceTok = jwt.sign(
+    { username: `device_gp_${id}`, role: "DEVICE", tukId: tuk.body._id },
+    process.env.JWT_SECRET || "change-this-secret",
+    { expiresIn: "15m" }
+  );
+
+  const ping = await request(app)
+    .post("/api/v1/location-ping")
+    .set("Authorization", `Bearer ${deviceTok}`)
+    .send({
+      latitude: 6.035,
+      longitude: 80.21,
+      pingedAt: new Date().toISOString()
+    });
+  assert.equal(ping.status, 201, JSON.stringify(ping.body));
+  const rp = ping.body.resolvedProvince;
+  const resolvedProvinceId = rp && typeof rp === "object" && rp._id ? rp._id : rp;
+  assert.equal(String(resolvedProvinceId), String(province.body._id));
+
+  const filtered = await withAuth(
+    request(app).get(`/api/v1/location-ping?provinceId=${province.body._id}`)
+  );
+  assert.equal(filtered.status, 200);
+  assert.ok(filtered.body.length >= 1, "expected at least one ping for province filter");
+  assert.ok(
+    filtered.body.some((p) => {
+      const v = p.resolvedProvince;
+      const id = v && typeof v === "object" && v._id ? v._id : v;
+      return String(id) === String(province.body._id);
+    }),
+    "filtered ping should carry resolvedProvince"
+  );
 });
 
 test("auth/register: HQ_ADMIN can register station officer and new user can login", async () => {
