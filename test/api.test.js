@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import crypto from "node:crypto";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -26,9 +25,8 @@ test.before(async () => {
     testMongoUri = mongoServer.getUri();
   }
 
-  const useIsolatedDb = process.env.GITHUB_ACTIONS === "true" || process.env.CI === "true";
-  const shortId = crypto.randomBytes(6).toString("hex");
-  const dbName = useIsolatedDb ? `webapi_${shortId}` : "webapi_test";
+  const dbName = process.env.TEST_DB_NAME || "webapi_test";
+  // Always isolated from production: never uses MONGO_DB_NAME / webapi_prod.
 
   await mongoose.connect(testMongoUri, { dbName });
 });

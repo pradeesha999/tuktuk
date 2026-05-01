@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { connectAppMongoose, getAppDatabaseName } from "../src/config/db.js";
 import District from "../src/models/District.js";
 import LocationPing from "../src/models/LocationPing.js";
 import PoliceStation from "../src/models/PoliceStation.js";
@@ -34,8 +35,8 @@ const generateCoordinatesByProvince = (provinceName) => {
 };
 
 const simulateTrackingData = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("MongoDB Connected");
+  await connectAppMongoose();
+  console.log(`MongoDB connected — database "${getAppDatabaseName()}"`);
 
   try {
     const districts = await District.find().populate("province");

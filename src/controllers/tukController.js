@@ -96,10 +96,69 @@ export const getTukLastLocation = async (req, res) => {
       longitude: ping.longitude,
       pingedAt: ping.pingedAt,
       speedKmh: ping.speedKmh,
-      heading: ping.heading
+      heading: ping.heading,
+      resolvedDistrict: ping.resolvedDistrict || null,
+      resolvedProvince: ping.resolvedProvince || null
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
+  }
+};
+
+// Get latest known area (resolved from GeoJSON boundaries) per tuk.
+export const getTuksCurrentArea = async (req, res) => {
+  try {
+    const { provinceId, districtId } = req.query;
+    const pingFilter = {};
+    if (provinceId) pingFilter.resolvedProvince = provinceId;
+    if (districtId) pingFilter.resolvedDistrict = districtId;
+
+    const latest = await LocationPing.aggregate([
+      { $match: pingFilter },
+      { $sort: { pingedAt: -1 } },
+      { $group: { _id: "$tuk", ping: { $first: "$$ROOT" } } },
+      {
+        $lookup: {
+          from: "tuks",
+          localField: "_id",
+          foreignField: "_id",
+          as: "tuk"
+        }
+      },
+      { $unwind: "$tuk" },
+      {
+        $lookup: {
+          from: "districts",
+          localField: "ping.resolvedDistrict",
+          foreignField: "_id",
+          as: "resolvedDistrict"
+        }
+      },
+      {
+        $lookup: {
+          from: "provinces",
+          localField: "ping.resolvedProvince",
+          foreignField: "_id",
+          as: "resolvedProvince"
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          tukId: "$tuk._id",
+          registrationNumber: "$tuk.registrationNumber",
+          pingedAt: "$ping.pingedAt",
+          latitude: "$ping.latitude",
+          longitude: "$ping.longitude",
+          resolvedDistrict: { $arrayElemAt: ["$resolvedDistrict", 0] },
+          resolvedProvince: { $arrayElemAt: ["$resolvedProvince", 0] }
+        }
+      }
+    ]);
+
+    return res.json(latest);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 

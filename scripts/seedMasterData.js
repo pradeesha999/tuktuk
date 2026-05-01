@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { connectAppMongoose, getAppDatabaseName } from "../src/config/db.js";
 import District from "../src/models/District.js";
 import PoliceStation from "../src/models/PoliceStation.js";
 import Province from "../src/models/Province.js";
@@ -65,8 +66,8 @@ const districtsByProvince = {
 };
 
 const seedMasterData = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("MongoDB Connected");
+  await connectAppMongoose();
+  console.log(`MongoDB connected — database "${getAppDatabaseName()}"`);
 
   try {
     const provinceMap = new Map();

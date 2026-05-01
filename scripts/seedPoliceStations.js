@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { connectAppMongoose, getAppDatabaseName } from "../src/config/db.js";
 import District from "../src/models/District.js";
 import PoliceStation from "../src/models/PoliceStation.js";
 
@@ -12,8 +13,8 @@ const seedPoliceStations = async () => {
     throw new Error("MONGO_URI is missing in .env");
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("MongoDB Connected");
+  await connectAppMongoose();
+  console.log(`MongoDB connected — database "${getAppDatabaseName()}"`);
 
   try {
     const districts = await District.find().sort({ name: 1 });

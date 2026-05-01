@@ -21,6 +21,17 @@ const locationPingSchema = new mongoose.Schema(
       min: -180,
       max: 180
     },
+    point: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point"
+      },
+      coordinates: {
+        type: [Number],
+        default: undefined
+      }
+    },
     pingedAt: {
       type: Date,
       required: true,
@@ -39,11 +50,24 @@ const locationPingSchema = new mongoose.Schema(
     source: {
       type: String,
       default: "device"
+    },
+    resolvedDistrict: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "District",
+      default: null
+    },
+    resolvedProvince: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Province",
+      default: null
     }
   },
   { timestamps: true }
 );
 
 locationPingSchema.index({ tuk: 1, pingedAt: -1 });
+locationPingSchema.index({ point: "2dsphere" });
+locationPingSchema.index({ resolvedDistrict: 1, pingedAt: -1 });
+locationPingSchema.index({ resolvedProvince: 1, pingedAt: -1 });
 
 export default mongoose.model("LocationPing", locationPingSchema);
