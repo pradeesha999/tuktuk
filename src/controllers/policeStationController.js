@@ -2,6 +2,13 @@
 import District from "../models/District.js";
 import PoliceStation from "../models/PoliceStation.js";
 import { mergeActive } from "../utils/softDelete.js";
+import {
+  parsePagination,
+  parseSort,
+  setPaginationHeaders
+} from "../utils/queryOptions.js";
+
+const STATION_SORT_FIELDS = ["name", "code", "createdAt", "updatedAt"];
 
 const stripDeletedAt = (body) => {
   const copy = { ...body };
@@ -44,7 +51,20 @@ export const getPoliceStations = async (req, res) => {
       filter.district = { $in: ids };
     }
 
-    const stations = await PoliceStation.find(mergeActive(filter)).populate(populateDistrictProvince).sort({ name: 1 });
+    const finalFilter = mergeActive(filter);
+    const sort = parseSort(req.query.sort, STATION_SORT_FIELDS, { name: 1 });
+    const { skip, limit } = parsePagination(req.query);
+
+    const [stations, total] = await Promise.all([
+      PoliceStation.find(finalFilter)
+        .populate(populateDistrictProvince)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      PoliceStation.countDocuments(finalFilter)
+    ]);
+
+    setPaginationHeaders(req, res, { total, skip, limit });
     return res.json(stations);
   } catch (error) {
     res.status(500).json({ error: error.message });

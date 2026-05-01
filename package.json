@@ -13,6 +13,7 @@
     "seed:master": "node scripts/seedMasterData.js",
     "seed:geo-boundaries": "node scripts/seedGeoBoundaries.js",
     "simulate:tracking": "node scripts/simulateTrackingData.js",
+    "export:simulation": "node scripts/exportSimulationData.js",
     "cleanup:test-dbs": "node scripts/cleanupTestDbs.js",
     "migrate:test-to-prod": "node scripts/migrateTestDbToWebapiProd.js"
   },

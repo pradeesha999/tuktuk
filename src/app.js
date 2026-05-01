@@ -18,6 +18,7 @@ dotenv.config();
 const app = express();
 
 app.set("trust proxy", 1);
+app.set("etag", "strong");
 
 const globalLimiter = rateLimit({
   windowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || "", 10) || 15 * 60 * 1000,
@@ -39,7 +40,12 @@ app.use(
     contentSecurityPolicy: false
   })
 );
-app.use(cors({ origin: corsOrigin }));
+app.use(
+  cors({
+    origin: corsOrigin,
+    exposedHeaders: ["X-Total-Count", "Link", "ETag"]
+  })
+);
 app.use(express.json({ limit: "10kb" }));
 app.use(globalLimiter);
 

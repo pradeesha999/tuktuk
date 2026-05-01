@@ -1,0 +1,227 @@
+[
+  {
+    "_id": "69e782acc9f995641686c339",
+    "district": "69e61be0c9f995641686bfa0",
+    "__v": 0,
+    "code": "AMP-PS",
+    "createdAt": "2026-04-21T13:59:06.583Z",
+    "name": "Ampara Police Station",
+    "updatedAt": "2026-05-01T14:01:28.502Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c33a",
+    "district": "69e61be0c9f995641686bfa4",
+    "__v": 0,
+    "code": "ANU-PS",
+    "createdAt": "2026-04-21T13:59:06.714Z",
+    "name": "Anuradhapura Police Station",
+    "updatedAt": "2026-05-01T14:01:30.015Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c33b",
+    "district": "69e61be0c9f995641686bfa6",
+    "__v": 0,
+    "code": "BAD-PS",
+    "createdAt": "2026-04-21T13:59:06.814Z",
+    "name": "Badulla Police Station",
+    "updatedAt": "2026-05-01T14:01:30.889Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c33c",
+    "district": "69e61bdfc9f995641686bf9f",
+    "__v": 0,
+    "code": "BTC-PS",
+    "createdAt": "2026-04-21T13:59:06.920Z",
+    "name": "Batticaloa Police Station",
+    "updatedAt": "2026-05-01T14:01:27.992Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c33d",
+    "district": "69e61bdec9f995641686bf91",
+    "__v": 0,
+    "code": "CMB-PS",
+    "createdAt": "2026-04-21T13:59:07.020Z",
+    "name": "Colombo Police Station",
+    "updatedAt": "2026-05-01T14:01:23.361Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c33e",
+    "district": "69e61bdfc9f995641686bf97",
+    "__v": 0,
+    "code": "GAL-PS",
+    "createdAt": "2026-04-21T13:59:07.125Z",
+    "name": "Galle Police Station",
+    "updatedAt": "2026-05-01T14:01:25.327Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c33f",
+    "district": "69e61bdec9f995641686bf92",
+    "__v": 0,
+    "code": "GMP-PS",
+    "createdAt": "2026-04-21T13:59:07.234Z",
+    "name": "Gampaha Police Station",
+    "updatedAt": "2026-05-01T14:01:23.638Z"
+  },
+  {
+    "_id": "69e782acc9f995641686c340",
+    "district": "69e61bdfc9f995641686bf99",
+    "__v": 0,
+    "code": "HMB-PS",
+    "createdAt": "2026-04-21T13:59:07.332Z",
+    "name": "Hambantota Police Station",
+    "updatedAt": "2026-05-01T14:01:25.976Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c341",
+    "district": "69e61bdfc9f995641686bf9a",
+    "__v": 0,
+    "code": "JFN-PS",
+    "createdAt": "2026-04-21T13:59:07.468Z",
+    "name": "Jaffna Police Station",
+    "updatedAt": "2026-05-01T14:01:26.230Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c343",
+    "district": "69e61bdec9f995641686bf94",
+    "__v": 0,
+    "code": "KDY-PS",
+    "createdAt": "2026-04-21T13:59:07.673Z",
+    "name": "Kandy Police Station",
+    "updatedAt": "2026-05-01T14:01:24.295Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c344",
+    "district": "69e61be0c9f995641686bfa9",
+    "__v": 0,
+    "code": "KEG-PS",
+    "createdAt": "2026-04-21T13:59:07.771Z",
+    "name": "Kegalle Police Station",
+    "updatedAt": "2026-05-01T14:01:32.414Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c345",
+    "district": "69e61bdfc9f995641686bf9b",
+    "__v": 0,
+    "code": "KLN-PS",
+    "createdAt": "2026-04-21T13:59:07.872Z",
+    "name": "Kilinochchi Police Station",
+    "updatedAt": "2026-05-01T14:01:26.489Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c342",
+    "district": "69e61bdec9f995641686bf93",
+    "__v": 0,
+    "code": "KLT-PS",
+    "createdAt": "2026-04-21T13:59:07.574Z",
+    "name": "Kalutara Police Station",
+    "updatedAt": "2026-05-01T14:01:23.898Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c346",
+    "district": "69e61be0c9f995641686bfa2",
+    "__v": 0,
+    "code": "KUR-PS",
+    "createdAt": "2026-04-21T13:59:07.970Z",
+    "name": "Kurunegala Police Station",
+    "updatedAt": "2026-05-01T14:01:29.287Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c34b",
+    "district": "69e61bdfc9f995641686bf9e",
+    "__v": 0,
+    "code": "MLT-PS",
+    "createdAt": "2026-04-21T13:59:08.484Z",
+    "name": "Mullaitivu Police Station",
+    "updatedAt": "2026-05-01T14:01:27.453Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c347",
+    "district": "69e61bdfc9f995641686bf9c",
+    "__v": 0,
+    "code": "MNR-PS",
+    "createdAt": "2026-04-21T13:59:08.070Z",
+    "name": "Mannar Police Station",
+    "updatedAt": "2026-05-01T14:01:26.856Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c34a",
+    "district": "69e61be0c9f995641686bfa7",
+    "__v": 0,
+    "code": "MON-PS",
+    "createdAt": "2026-04-21T13:59:08.374Z",
+    "name": "Monaragala Police Station",
+    "updatedAt": "2026-05-01T14:01:31.354Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c348",
+    "district": "69e61bdfc9f995641686bf95",
+    "__v": 0,
+    "code": "MTL-PS",
+    "createdAt": "2026-04-21T13:59:08.174Z",
+    "name": "Matale Police Station",
+    "updatedAt": "2026-05-01T14:01:24.664Z"
+  },
+  {
+    "_id": "69e782adc9f995641686c349",
+    "district": "69e61bdfc9f995641686bf98",
+    "__v": 0,
+    "code": "MTR-PS",
+    "createdAt": "2026-04-21T13:59:08.278Z",
+    "name": "Matara Police Station",
+    "updatedAt": "2026-05-01T14:01:25.583Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c34c",
+    "district": "69e61bdfc9f995641686bf96",
+    "__v": 0,
+    "code": "NWE-PS",
+    "createdAt": "2026-04-21T13:59:08.582Z",
+    "name": "Nuwara Eliya Police Station",
+    "updatedAt": "2026-05-01T14:01:25.068Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c34d",
+    "district": "69e61be0c9f995641686bfa5",
+    "__v": 0,
+    "code": "POL-PS",
+    "createdAt": "2026-04-21T13:59:08.685Z",
+    "name": "Polonnaruwa Police Station",
+    "updatedAt": "2026-05-01T14:01:30.375Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c34e",
+    "district": "69e61be0c9f995641686bfa3",
+    "__v": 0,
+    "code": "PUT-PS",
+    "createdAt": "2026-04-21T13:59:08.781Z",
+    "name": "Puttalam Police Station",
+    "updatedAt": "2026-05-01T14:01:29.542Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c34f",
+    "district": "69e61be0c9f995641686bfa8",
+    "__v": 0,
+    "code": "RAT-PS",
+    "createdAt": "2026-04-21T13:59:08.876Z",
+    "name": "Ratnapura Police Station",
+    "updatedAt": "2026-05-01T14:01:32.063Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c350",
+    "district": "69e61be0c9f995641686bfa1",
+    "__v": 0,
+    "code": "TRC-PS",
+    "createdAt": "2026-04-21T13:59:08.973Z",
+    "name": "Trincomalee Police Station",
+    "updatedAt": "2026-05-01T14:01:28.877Z"
+  },
+  {
+    "_id": "69e782aec9f995641686c351",
+    "district": "69e61bdfc9f995641686bf9d",
+    "__v": 0,
+    "code": "VAV-PS",
+    "createdAt": "2026-04-21T13:59:09.068Z",
+    "name": "Vavuniya Police Station",
+    "updatedAt": "2026-05-01T14:01:27.138Z"
+  }
+]

@@ -1,6 +1,13 @@
 // Province controller: CRUD handlers for province resources.
 import Province from "../models/Province.js";
 import { mergeActive } from "../utils/softDelete.js";
+import {
+  parsePagination,
+  parseSort,
+  setPaginationHeaders
+} from "../utils/queryOptions.js";
+
+const PROVINCE_SORT_FIELDS = ["name", "code", "createdAt", "updatedAt"];
 
 const stripDeletedAt = (body) => {
   const copy = { ...body };
@@ -21,11 +28,21 @@ export const createProvince = async (req, res) => {
 // Get all provinces (active only). Omits GeoJSON boundaries by default (large payloads break Swagger/clients).
 export const getProvinces = async (req, res) => {
   try {
-    let query = Province.find(mergeActive()).sort({ name: 1 });
+    const sort = parseSort(req.query.sort, PROVINCE_SORT_FIELDS, { name: 1 });
+    const { skip, limit } = parsePagination(req.query);
+    const filter = mergeActive();
+
+    let query = Province.find(filter).sort(sort).skip(skip).limit(limit);
     if (req.query.includeBoundary !== "true") {
       query = query.select("-boundary");
     }
-    const provinces = await query;
+
+    const [provinces, total] = await Promise.all([
+      query,
+      Province.countDocuments(filter)
+    ]);
+
+    setPaginationHeaders(req, res, { total, skip, limit });
     return res.json(provinces);
   } catch (error) {
     res.status(500).json({ error: error.message });

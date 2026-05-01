@@ -303,3 +303,83 @@ test("auth/register: non-HQ user is forbidden", async () => {
 
   assert.equal(register.status, 403);
 });
+
+test("province list supports ?sort= and exposes X-Total-Count", async () => {
+  const id = mk();
+  const a = await withAuth(request(app).post("/api/v1/province"))
+    .send({ name: `AA_${id}`, code: `AA${id.toUpperCase()}` });
+  const b = await withAuth(request(app).post("/api/v1/province"))
+    .send({ name: `BB_${id}`, code: `BB${id.toUpperCase()}` });
+  assert.equal(a.status, 201);
+  assert.equal(b.status, 201);
+
+  const asc = await withAuth(request(app).get("/api/v1/province?sort=name"));
+  assert.equal(asc.status, 200);
+  assert.equal(asc.headers["x-total-count"], "2");
+  assert.equal(asc.body[0].name, `AA_${id}`);
+
+  const desc = await withAuth(request(app).get("/api/v1/province?sort=-name"));
+  assert.equal(desc.status, 200);
+  assert.equal(desc.body[0].name, `BB_${id}`);
+});
+
+test("province list returns 304 Not Modified on matching If-None-Match", async () => {
+  const id = mk();
+  const created = await withAuth(request(app).post("/api/v1/province"))
+    .send({ name: `Etag_${id}`, code: `ET${id.toUpperCase()}` });
+  assert.equal(created.status, 201);
+
+  const first = await withAuth(request(app).get("/api/v1/province"));
+  assert.equal(first.status, 200);
+  const etag = first.headers.etag;
+  assert.ok(etag, "expected ETag header on the list response");
+
+  const second = await withAuth(
+    request(app).get("/api/v1/province").set("If-None-Match", etag)
+  );
+  assert.equal(second.status, 304);
+  assert.equal(second.text, "");
+});
+
+test("location-ping list honours ?sort=pingedAt (ascending)", async () => {
+  const id = mk();
+  const province = await withAuth(request(app).post("/api/v1/province"))
+    .send({ name: `Sort_${id}`, code: `SR${id.toUpperCase()}` });
+  const district = await withAuth(request(app).post("/api/v1/district"))
+    .send({ name: `SortD_${id}`, code: `SD${id.toUpperCase()}`, province: province.body._id });
+  const tuk = await withAuth(request(app).post("/api/v1/tuk")).send({
+    registrationNumber: `SR-${id}`,
+    deviceId: `device-sr-${id}`,
+    district: district.body._id
+  });
+
+  const deviceTok = jwt.sign(
+    { username: `dev_${id}`, role: "DEVICE", tukId: tuk.body._id },
+    process.env.JWT_SECRET || "change-this-secret",
+    { expiresIn: "15m" }
+  );
+
+  const oldTime = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const newTime = new Date().toISOString();
+
+  const p1 = await request(app)
+    .post("/api/v1/location-ping")
+    .set("Authorization", `Bearer ${deviceTok}`)
+    .send({ latitude: 6.04, longitude: 80.21, pingedAt: newTime });
+  const p2 = await request(app)
+    .post("/api/v1/location-ping")
+    .set("Authorization", `Bearer ${deviceTok}`)
+    .send({ latitude: 6.05, longitude: 80.22, pingedAt: oldTime });
+  assert.equal(p1.status, 201);
+  assert.equal(p2.status, 201);
+
+  const asc = await withAuth(
+    request(app).get(`/api/v1/location-ping?tukId=${tuk.body._id}&sort=pingedAt`)
+  );
+  assert.equal(asc.status, 200);
+  assert.equal(asc.headers["x-total-count"], "2");
+  assert.ok(
+    new Date(asc.body[0].pingedAt) <= new Date(asc.body[1].pingedAt),
+    "expected ascending pingedAt order"
+  );
+});

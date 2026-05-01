@@ -88,9 +88,26 @@ const router = express.Router();
  *         schema:
  *           type: string
  *           format: date-time
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: "Comma-separated fields, prefix with `-` for descending. Allowed: pingedAt, speedKmh, createdAt."
+ *         example: -pingedAt
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 500
  *     responses:
  *       200:
- *         description: Location ping list
+ *         description: Location ping list (X-Total-Count + Link headers; supports If-None-Match for 304 Not Modified)
  */
 router.use(authenticateToken);
 

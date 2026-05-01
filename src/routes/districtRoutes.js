@@ -57,9 +57,25 @@ const router = express.Router();
  *         name: provinceId
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: "Comma-separated fields, prefix with `-` for descending. Allowed: name, code, createdAt, updatedAt."
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 500
  *     responses:
  *       200:
- *         description: District list
+ *         description: District list (X-Total-Count + Link headers; supports If-None-Match for 304 Not Modified)
  */
 /**
  * @swagger
