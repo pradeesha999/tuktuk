@@ -1,6 +1,6 @@
 // Province controller: CRUD handlers for province resources.
 import Province from "../models/Province.js";
-import { mergeActive } from "../utils/softDelete.js";
+import { mergeActive, stripDeletedAt } from "../utils/softDelete.js";
 import {
   parsePagination,
   parseSort,
@@ -8,12 +8,6 @@ import {
 } from "../utils/queryOptions.js";
 
 const PROVINCE_SORT_FIELDS = ["name", "code", "createdAt", "updatedAt"];
-
-const stripDeletedAt = (body) => {
-  const copy = { ...body };
-  delete copy.deletedAt;
-  return copy;
-};
 
 // Create one province record.
 export const createProvince = async (req, res) => {

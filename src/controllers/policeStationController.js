@@ -1,7 +1,8 @@
 // Police station controller: CRUD + filters for district / province scope.
 import District from "../models/District.js";
 import PoliceStation from "../models/PoliceStation.js";
-import { mergeActive } from "../utils/softDelete.js";
+import { mergeActive, stripDeletedAt } from "../utils/softDelete.js";
+import { populateDistrictProvinceCompact } from "../utils/geoResponse.js";
 import {
   parsePagination,
   parseSort,
@@ -10,19 +11,6 @@ import {
 
 const STATION_SORT_FIELDS = ["name", "code", "createdAt", "updatedAt"];
 
-const stripDeletedAt = (body) => {
-  const copy = { ...body };
-  delete copy.deletedAt;
-  return copy;
-};
-
-const populateDistrictProvince = {
-  path: "district",
-  match: { deletedAt: null },
-  select: "-boundary",
-  populate: { path: "province", match: { deletedAt: null }, select: "-boundary" }
-};
-
 // Create one police station record.
 export const createPoliceStation = async (req, res) => {
   try {
@@ -30,7 +18,7 @@ export const createPoliceStation = async (req, res) => {
     if (!districtOk) return res.status(400).json({ error: "District not found or inactive" });
 
     const station = await PoliceStation.create(req.body);
-    const populated = await PoliceStation.findOne(mergeActive({ _id: station._id })).populate(populateDistrictProvince);
+    const populated = await PoliceStation.findOne(mergeActive({ _id: station._id })).populate(populateDistrictProvinceCompact);
     res.status(201).json(populated);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -57,7 +45,7 @@ export const getPoliceStations = async (req, res) => {
 
     const [stations, total] = await Promise.all([
       PoliceStation.find(finalFilter)
-        .populate(populateDistrictProvince)
+        .populate(populateDistrictProvinceCompact)
         .sort(sort)
         .skip(skip)
         .limit(limit),
@@ -74,7 +62,7 @@ export const getPoliceStations = async (req, res) => {
 // Get one police station by Mongo id.
 export const getPoliceStationById = async (req, res) => {
   try {
-    const station = await PoliceStation.findOne(mergeActive({ _id: req.params.id })).populate(populateDistrictProvince);
+    const station = await PoliceStation.findOne(mergeActive({ _id: req.params.id })).populate(populateDistrictProvinceCompact);
     if (!station) return res.status(404).json({ error: "Not found" });
     res.json(station);
   } catch (error) {
@@ -96,7 +84,7 @@ export const updatePoliceStation = async (req, res) => {
       runValidators: true
     });
     if (!updated) return res.status(404).json({ error: "Not found" });
-    const station = await PoliceStation.findOne(mergeActive({ _id: updated._id })).populate(populateDistrictProvince);
+    const station = await PoliceStation.findOne(mergeActive({ _id: updated._id })).populate(populateDistrictProvinceCompact);
     res.json(station);
   } catch (error) {
     res.status(400).json({ error: error.message });

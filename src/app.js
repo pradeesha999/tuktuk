@@ -15,34 +15,30 @@ import swaggerSpec from "./config/swagger.js";
 
 dotenv.config();
 
+const intEnv = (name, fallback) =>
+  Number.parseInt(process.env[name] || "", 10) || fallback;
+
+const buildLimiter = (windowMs, limit) =>
+  rateLimit({ windowMs, limit, standardHeaders: "draft-8", legacyHeaders: false });
+
+const globalLimiter = buildLimiter(
+  intEnv("RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000),
+  intEnv("RATE_LIMIT_MAX", 300)
+);
+const authLimiter = buildLimiter(
+  intEnv("AUTH_RATE_LIMIT_WINDOW_MS", 10 * 60 * 1000),
+  intEnv("AUTH_RATE_LIMIT_MAX", 40)
+);
+
 const app = express();
 
 app.set("trust proxy", 1);
 app.set("etag", "strong");
 
-const globalLimiter = rateLimit({
-  windowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || "", 10) || 15 * 60 * 1000,
-  limit: Number.parseInt(process.env.RATE_LIMIT_MAX || "", 10) || 300,
-  standardHeaders: "draft-8",
-  legacyHeaders: false
-});
-
-const authLimiter = rateLimit({
-  windowMs: Number.parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || "", 10) || 10 * 60 * 1000,
-  limit: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX || "", 10) || 40,
-  standardHeaders: "draft-8",
-  legacyHeaders: false
-});
-
-const corsOrigin = process.env.CORS_ORIGIN || "*";
-app.use(
-  helmet({
-    contentSecurityPolicy: false
-  })
-);
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: process.env.CORS_ORIGIN || "*",
     exposedHeaders: ["X-Total-Count", "Link", "ETag"]
   })
 );

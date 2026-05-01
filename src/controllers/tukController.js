@@ -4,20 +4,12 @@ import District from "../models/District.js";
 import LocationPing from "../models/LocationPing.js";
 import PoliceStation from "../models/PoliceStation.js";
 import Tuk from "../models/Tuk.js";
-import { activeTukDocMatch, mergeActive } from "../utils/softDelete.js";
-
-const stripDeletedAt = (body) => {
-  const copy = { ...body };
-  delete copy.deletedAt;
-  return copy;
-};
-
-import {
-  populateTukGeoCompact as populateTukGeo
-} from "../utils/geoResponse.js";
+import { activeTukDocMatch, mergeActive, stripDeletedAt } from "../utils/softDelete.js";
+import { populateTukGeoCompact as populateTukGeo } from "../utils/geoResponse.js";
 import {
   buildPingVisibilityClause,
-  homeTukIdStrings
+  homeTukIdStrings,
+  isHomeTukDoc
 } from "../utils/jurisdictionPingScope.js";
 import { getEffectiveDistrictId } from "../middleware/authMiddleware.js";
 import {
@@ -27,19 +19,6 @@ import {
 } from "../utils/queryOptions.js";
 
 const TUK_SORT_FIELDS = ["registrationNumber", "deviceId", "createdAt", "updatedAt"];
-const isTukAllowed = (tuk, auth) => {
-  if (!auth || auth.role === "HQ_ADMIN") return true;
-  if (auth.role === "PROVINCE_ADMIN") {
-    return String(tuk?.district?.province?._id || tuk?.district?.province) === String(auth.provinceId);
-  }
-  if (auth.role === "DISTRICT_OFFICER") {
-    return String(tuk?.district?._id || tuk?.district) === String(auth.districtId);
-  }
-  if (auth.role === "STATION_OFFICER") {
-    return String(tuk?.policeStation?._id || tuk?.policeStation) === String(auth.stationId);
-  }
-  return false;
-};
 
 // Create one tuk record.
 export const createTukTuk = async (req, res) => {
@@ -103,7 +82,7 @@ export const getTukById = async (req, res) => {
   try {
     const tuk = await Tuk.findOne(mergeActive({ _id: req.params.id })).populate(populateTukGeo);
     if (!tuk) return res.status(404).json({ error: "Not found" });
-    if (isTukAllowed(tuk, req.auth)) {
+    if (isHomeTukDoc(tuk, req.auth)) {
       return res.json(tuk);
     }
     if (["PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"].includes(req.auth?.role)) {
@@ -136,7 +115,7 @@ export const getTukLastLocation = async (req, res) => {
       resolvedProvince: ping.resolvedProvince || null
     });
 
-    if (isTukAllowed(tuk, req.auth)) {
+    if (isHomeTukDoc(tuk, req.auth)) {
       const ping = await LocationPing.findOne({ tuk: tuk._id }).sort({ pingedAt: -1 });
       if (!ping) return res.status(404).json({ error: "No location data" });
       return res.json(jsonBody(ping));
@@ -298,7 +277,7 @@ export const updateTuk = async (req, res) => {
   try {
     const current = await Tuk.findOne(mergeActive({ _id: req.params.id })).populate(populateTukGeo);
     if (!current) return res.status(404).json({ error: "Not found" });
-    if (!isTukAllowed(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
+    if (!isHomeTukDoc(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
 
     if (req.body.district) {
       const districtOk = await District.findOne(mergeActive({ _id: req.body.district }));
@@ -327,7 +306,7 @@ export const deleteTuk = async (req, res) => {
   try {
     const current = await Tuk.findOne(mergeActive({ _id: req.params.id })).populate(populateTukGeo);
     if (!current) return res.status(404).json({ error: "Not found" });
-    if (!isTukAllowed(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
+    if (!isHomeTukDoc(current, req.auth)) return res.status(403).json({ error: "Forbidden" });
 
     const tuk = await Tuk.findOneAndUpdate(
       mergeActive({ _id: req.params.id }),

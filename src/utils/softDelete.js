@@ -7,3 +7,10 @@ export const mergeActive = (filter = {}) => ({ ...filter, ...activeOnly });
 export const activeTukDocMatch = {
   $or: [{ "tuk.deletedAt": null }, { "tuk.deletedAt": { $exists: false } }]
 };
+
+/** Drop `deletedAt` from a request body so callers cannot un-delete via update. */
+export const stripDeletedAt = (body) => {
+  const copy = { ...body };
+  delete copy.deletedAt;
+  return copy;
+};
