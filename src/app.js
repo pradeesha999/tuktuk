@@ -45,6 +45,20 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 app.use(globalLimiter);
 
+app.get("/", (req, res) => {
+  res.json({
+    name: "Tuk-Tuk Tracking API",
+    version: "1.0.0",
+    docs: "/api-docs",
+    health: "/health",
+    api: "/api/v1"
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", uptime: process.uptime() });
+});
+
 app.use("/api/v1/tuk", tukRoutes);
 app.use("/api/v1/province", provinceRoutes);
 app.use("/api/v1/district", districtRoutes);
@@ -52,5 +66,9 @@ app.use("/api/v1/police-station", policeStationRoutes);
 app.use("/api/v1/location-ping", locationPingRoutes);
 app.use("/api/v1/auth", authLimiter, authRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.use((req, res) => {
+  res.status(404).json({ error: "Not Found", path: req.originalUrl });
+});
 
 export default app;
