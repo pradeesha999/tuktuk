@@ -73,9 +73,25 @@ const router = express.Router();
  *         name: stationId
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: "Comma-separated fields, prefix with `-` for descending. Allowed: registrationNumber, deviceId, createdAt, updatedAt."
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 500
  *     responses:
  *       200:
- *         description: Tuk list
+ *         description: Tuk list (X-Total-Count + Link headers; supports If-None-Match for 304 Not Modified)
  */
 /**
  * @swagger

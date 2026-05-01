@@ -2,6 +2,13 @@
 import District from "../models/District.js";
 import Province from "../models/Province.js";
 import { mergeActive } from "../utils/softDelete.js";
+import {
+  parsePagination,
+  parseSort,
+  setPaginationHeaders
+} from "../utils/queryOptions.js";
+
+const DISTRICT_SORT_FIELDS = ["name", "code", "createdAt", "updatedAt"];
 
 const stripDeletedAt = (body) => {
   const copy = { ...body };
@@ -34,11 +41,25 @@ export const getDistricts = async (req, res) => {
   try {
     const { provinceId } = req.query;
     const filter = provinceId ? mergeActive({ province: provinceId }) : mergeActive();
-    let query = District.find(filter).populate(populateProvinceActive).sort({ name: 1 });
+
+    const sort = parseSort(req.query.sort, DISTRICT_SORT_FIELDS, { name: 1 });
+    const { skip, limit } = parsePagination(req.query);
+
+    let query = District.find(filter)
+      .populate(populateProvinceActive)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
     if (req.query.includeBoundary !== "true") {
       query = query.select("-boundary");
     }
-    const districts = await query;
+
+    const [districts, total] = await Promise.all([
+      query,
+      District.countDocuments(filter)
+    ]);
+
+    setPaginationHeaders(req, res, { total, skip, limit });
     return res.json(districts);
   } catch (error) {
     res.status(500).json({ error: error.message });

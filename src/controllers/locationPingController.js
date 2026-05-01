@@ -13,20 +13,14 @@ import {
   pingAreaPopulateCompact,
   pingPopulateCompact
 } from "../utils/geoResponse.js";
+import {
+  parsePagination,
+  parseSort,
+  setPaginationHeaders
+} from "../utils/queryOptions.js";
 
-const DEFAULT_PING_LIMIT = 100;
-const MAX_PING_LIMIT = 500;
-
-const parsePingSkip = (raw) => {
-  const n = Number.parseInt(String(raw ?? ""), 10);
-  return Number.isFinite(n) && n >= 0 ? n : 0;
-};
-
-const parsePingLimit = (raw) => {
-  const n = Number.parseInt(String(raw ?? ""), 10);
-  if (!Number.isFinite(n) || n < 1) return DEFAULT_PING_LIMIT;
-  return Math.min(n, MAX_PING_LIMIT);
-};
+const PING_SORT_FIELDS = ["pingedAt", "speedKmh", "createdAt"];
+const PING_PAGINATION_OPTS = { defaultLimit: 100, maxLimit: 500 };
 
 // Create one location ping record (DEVICE tokens only at route layer).
 export const createLocationPing = async (req, res) => {
@@ -57,8 +51,8 @@ export const getLocationPings = async (req, res) => {
     const auth = req.auth;
     const { tukId, districtId, provinceId, from, to } = req.query;
 
-    const limit = parsePingLimit(req.query.limit);
-    const skip = parsePingSkip(req.query.skip);
+    const sort = parseSort(req.query.sort, PING_SORT_FIELDS, { pingedAt: -1 });
+    const { skip, limit } = parsePagination(req.query, PING_PAGINATION_OPTS);
 
     const andParts = [];
 
@@ -73,17 +67,24 @@ export const getLocationPings = async (req, res) => {
       if (!auth.tukId) return res.status(403).json({ error: "Forbidden" });
       andParts.push({ tuk: auth.tukId });
       const filter = andParts.length === 1 ? andParts[0] : { $and: andParts };
-      const pings = await LocationPing.find(filter)
-        .populate([pingPopulateCompact, ...pingAreaPopulateCompact])
-        .sort({ pingedAt: -1 })
-        .skip(skip)
-        .limit(limit);
+
+      const [pings, total] = await Promise.all([
+        LocationPing.find(filter)
+          .populate([pingPopulateCompact, ...pingAreaPopulateCompact])
+          .sort(sort)
+          .skip(skip)
+          .limit(limit),
+        LocationPing.countDocuments(filter)
+      ]);
+
+      setPaginationHeaders(req, res, { total, skip, limit });
       return res.json(pings);
     }
 
     const activeTuks = await Tuk.find(mergeActive()).select("_id").lean();
     const activeIds = activeTuks.map((t) => t._id);
     if (activeIds.length === 0) {
+      setPaginationHeaders(req, res, { total: 0, skip, limit });
       return res.json([]);
     }
 
@@ -105,11 +106,14 @@ export const getLocationPings = async (req, res) => {
 
     const filter = andParts.length === 1 ? andParts[0] : { $and: andParts };
 
-    const pings = await LocationPing.find(filter)
-      .populate([pingPopulateCompact, ...pingAreaPopulateCompact])
-      .sort({ pingedAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const [pings, total] = await Promise.all([
+      LocationPing.find(filter)
+        .populate([pingPopulateCompact, ...pingAreaPopulateCompact])
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      LocationPing.countDocuments(filter)
+    ]);
 
     const homeSet = await homeTukIdStrings(auth);
     const out = pings.map((doc) => {
@@ -117,6 +121,7 @@ export const getLocationPings = async (req, res) => {
       return sanitizePingForViewer(plain, auth, homeSet);
     });
 
+    setPaginationHeaders(req, res, { total, skip, limit });
     return res.json(out);
   } catch (error) {
     res.status(500).json({ error: error.message });

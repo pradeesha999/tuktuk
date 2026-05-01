@@ -20,6 +20,13 @@ import {
   homeTukIdStrings
 } from "../utils/jurisdictionPingScope.js";
 import { getEffectiveDistrictId } from "../middleware/authMiddleware.js";
+import {
+  parsePagination,
+  parseSort,
+  setPaginationHeaders
+} from "../utils/queryOptions.js";
+
+const TUK_SORT_FIELDS = ["registrationNumber", "deviceId", "createdAt", "updatedAt"];
 const isTukAllowed = (tuk, auth) => {
   if (!auth || auth.role === "HQ_ADMIN") return true;
   if (auth.role === "PROVINCE_ADMIN") {
@@ -72,7 +79,19 @@ export const getTukTuks = async (req, res) => {
       filter.policeStation = stationId;
     }
 
-    const tuks = await Tuk.find(filter).populate(populateTukGeo).sort({ createdAt: -1 });
+    const sort = parseSort(req.query.sort, TUK_SORT_FIELDS, { createdAt: -1 });
+    const { skip, limit } = parsePagination(req.query);
+
+    const [tuks, total] = await Promise.all([
+      Tuk.find(filter)
+        .populate(populateTukGeo)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Tuk.countDocuments(filter)
+    ]);
+
+    setPaginationHeaders(req, res, { total, skip, limit });
     return res.json(tuks);
   } catch (error) {
     res.status(500).json({ error: error.message });

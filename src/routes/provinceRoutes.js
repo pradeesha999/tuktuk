@@ -49,9 +49,27 @@ const router = express.Router();
  *     summary: List provinces
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: "Comma-separated fields, prefix with `-` for descending. Allowed: name, code, createdAt, updatedAt."
+ *         example: -createdAt
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 500
  *     responses:
  *       200:
- *         description: Province list
+ *         description: Province list (X-Total-Count + Link headers; supports If-None-Match for 304 Not Modified)
  */
 /**
  * @swagger

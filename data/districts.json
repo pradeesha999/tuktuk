@@ -1,0 +1,227 @@
+[
+  {
+    "_id": "69e61be0c9f995641686bfa0",
+    "__v": 0,
+    "code": "AMP",
+    "createdAt": "2026-04-20T12:28:15.611Z",
+    "name": "Ampara",
+    "province": "69e61bdec9f995641686bf8c",
+    "updatedAt": "2026-05-01T14:02:11.596Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa4",
+    "__v": 0,
+    "code": "ANU",
+    "createdAt": "2026-04-20T12:28:15.986Z",
+    "name": "Anuradhapura",
+    "province": "69e61bdec9f995641686bf8e",
+    "updatedAt": "2026-05-01T14:02:13.502Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa6",
+    "__v": 0,
+    "code": "BAD",
+    "createdAt": "2026-04-20T12:28:16.174Z",
+    "name": "Badulla",
+    "province": "69e61bdec9f995641686bf8f",
+    "updatedAt": "2026-05-01T14:02:15.868Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf9f",
+    "__v": 0,
+    "code": "BTC",
+    "createdAt": "2026-04-20T12:28:15.518Z",
+    "name": "Batticaloa",
+    "province": "69e61bdec9f995641686bf8c",
+    "updatedAt": "2026-05-01T14:02:17.958Z"
+  },
+  {
+    "_id": "69e61bdec9f995641686bf91",
+    "__v": 0,
+    "code": "CMB",
+    "createdAt": "2026-04-20T12:28:14.165Z",
+    "name": "Colombo",
+    "province": "69d5361e883a363e698c3d2d",
+    "updatedAt": "2026-05-01T14:02:20.253Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf97",
+    "__v": 0,
+    "code": "GAL",
+    "createdAt": "2026-04-20T12:28:14.754Z",
+    "name": "Galle",
+    "province": "69e61bddc9f995641686bf8a",
+    "updatedAt": "2026-05-01T14:02:22.103Z"
+  },
+  {
+    "_id": "69e61bdec9f995641686bf92",
+    "__v": 0,
+    "code": "GMP",
+    "createdAt": "2026-04-20T12:28:14.261Z",
+    "name": "Gampaha",
+    "province": "69d5361e883a363e698c3d2d",
+    "updatedAt": "2026-05-01T14:02:24.139Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf99",
+    "__v": 0,
+    "code": "HMB",
+    "createdAt": "2026-04-20T12:28:14.946Z",
+    "name": "Hambantota",
+    "province": "69e61bddc9f995641686bf8a",
+    "updatedAt": "2026-05-01T14:02:25.957Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf9a",
+    "__v": 0,
+    "code": "JFN",
+    "createdAt": "2026-04-20T12:28:15.037Z",
+    "name": "Jaffna",
+    "province": "69e61bdec9f995641686bf8b",
+    "updatedAt": "2026-05-01T14:02:27.563Z"
+  },
+  {
+    "_id": "69e61bdec9f995641686bf94",
+    "__v": 0,
+    "code": "KDY",
+    "createdAt": "2026-04-20T12:28:14.457Z",
+    "name": "Kandy",
+    "province": "69e61bddc9f995641686bf89",
+    "updatedAt": "2026-05-01T14:02:29.805Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa9",
+    "__v": 0,
+    "code": "KEG",
+    "createdAt": "2026-04-20T12:28:16.452Z",
+    "name": "Kegalle",
+    "province": "69e61bdec9f995641686bf90",
+    "updatedAt": "2026-05-01T14:02:32.554Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf9b",
+    "__v": 0,
+    "code": "KLN",
+    "createdAt": "2026-04-20T12:28:15.133Z",
+    "name": "Kilinochchi",
+    "province": "69e61bdec9f995641686bf8b",
+    "updatedAt": "2026-05-01T14:02:34.134Z"
+  },
+  {
+    "_id": "69e61bdec9f995641686bf93",
+    "__v": 0,
+    "code": "KLT",
+    "createdAt": "2026-04-20T12:28:14.354Z",
+    "name": "Kalutara",
+    "province": "69d5361e883a363e698c3d2d",
+    "updatedAt": "2026-05-01T14:02:36.141Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa2",
+    "__v": 0,
+    "code": "KUR",
+    "createdAt": "2026-04-20T12:28:15.799Z",
+    "name": "Kurunegala",
+    "province": "69e61bdec9f995641686bf8d",
+    "updatedAt": "2026-05-01T14:02:38.477Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf9e",
+    "__v": 0,
+    "code": "MLT",
+    "createdAt": "2026-04-20T12:28:15.410Z",
+    "name": "Mullaitivu",
+    "province": "69e61bdec9f995641686bf8b",
+    "updatedAt": "2026-05-01T14:02:40.997Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf9c",
+    "__v": 0,
+    "code": "MNR",
+    "createdAt": "2026-04-20T12:28:15.225Z",
+    "name": "Mannar",
+    "province": "69e61bdec9f995641686bf8b",
+    "updatedAt": "2026-05-01T14:02:43.786Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa7",
+    "__v": 0,
+    "code": "MON",
+    "createdAt": "2026-04-20T12:28:16.266Z",
+    "name": "Monaragala",
+    "province": "69e61bdec9f995641686bf8f",
+    "updatedAt": "2026-05-01T14:02:45.762Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf95",
+    "__v": 0,
+    "code": "MTL",
+    "createdAt": "2026-04-20T12:28:14.551Z",
+    "name": "Matale",
+    "province": "69e61bddc9f995641686bf89",
+    "updatedAt": "2026-05-01T14:02:47.627Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf98",
+    "__v": 0,
+    "code": "MTR",
+    "createdAt": "2026-04-20T12:28:14.853Z",
+    "name": "Matara",
+    "province": "69e61bddc9f995641686bf8a",
+    "updatedAt": "2026-05-01T14:02:49.786Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf96",
+    "__v": 0,
+    "code": "NWE",
+    "createdAt": "2026-04-20T12:28:14.661Z",
+    "name": "Nuwara Eliya",
+    "province": "69e61bddc9f995641686bf89",
+    "updatedAt": "2026-05-01T14:02:52.108Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa5",
+    "__v": 0,
+    "code": "POL",
+    "createdAt": "2026-04-20T12:28:16.080Z",
+    "name": "Polonnaruwa",
+    "province": "69e61bdec9f995641686bf8e",
+    "updatedAt": "2026-05-01T14:02:53.868Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa3",
+    "__v": 0,
+    "code": "PUT",
+    "createdAt": "2026-04-20T12:28:15.892Z",
+    "name": "Puttalam",
+    "province": "69e61bdec9f995641686bf8d",
+    "updatedAt": "2026-05-01T14:02:55.686Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa8",
+    "__v": 0,
+    "code": "RAT",
+    "createdAt": "2026-04-20T12:28:16.358Z",
+    "name": "Ratnapura",
+    "province": "69e61bdec9f995641686bf90",
+    "updatedAt": "2026-05-01T14:02:58.286Z"
+  },
+  {
+    "_id": "69e61be0c9f995641686bfa1",
+    "__v": 0,
+    "code": "TRC",
+    "createdAt": "2026-04-20T12:28:15.704Z",
+    "name": "Trincomalee",
+    "province": "69e61bdec9f995641686bf8c",
+    "updatedAt": "2026-05-01T14:03:00.598Z"
+  },
+  {
+    "_id": "69e61bdfc9f995641686bf9d",
+    "__v": 0,
+    "code": "VAV",
+    "createdAt": "2026-04-20T12:28:15.317Z",
+    "name": "Vavuniya",
+    "province": "69e61bdec9f995641686bf8b",
+    "updatedAt": "2026-05-01T14:03:02.793Z"
+  }
+]
