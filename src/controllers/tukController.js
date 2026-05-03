@@ -23,12 +23,38 @@ const TUK_SORT_FIELDS = ["registrationNumber", "deviceId", "createdAt", "updated
 // Create one tuk record.
 export const createTukTuk = async (req, res) => {
   try {
+    const auth = req.auth;
+    if (!req.body.district) {
+      return res.status(400).json({ error: "district is required (or authenticate as STATION_OFFICER to bind to your station)" });
+    }
+
     const districtOk = await District.findOne(mergeActive({ _id: req.body.district }));
     if (!districtOk) return res.status(400).json({ error: "District not found or inactive" });
+
+    if (auth.role === "PROVINCE_ADMIN" && auth.provinceId) {
+      if (String(districtOk.province) !== String(auth.provinceId)) {
+        return res.status(403).json({ error: "District is outside your province" });
+      }
+    }
+
+    if (auth.role === "DISTRICT_OFFICER" && auth.districtId) {
+      if (String(req.body.district) !== String(auth.districtId)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+    }
+
+    if (auth.role === "STATION_OFFICER" && auth.stationId) {
+      if (!req.body.policeStation || String(req.body.policeStation) !== String(auth.stationId)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+    }
 
     if (req.body.policeStation) {
       const stationOk = await PoliceStation.findOne(mergeActive({ _id: req.body.policeStation }));
       if (!stationOk) return res.status(400).json({ error: "Police station not found or inactive" });
+      if (String(stationOk.district) !== String(req.body.district)) {
+        return res.status(400).json({ error: "Police station does not belong to the given district" });
+      }
     }
 
     const tuk = await Tuk.create(req.body);

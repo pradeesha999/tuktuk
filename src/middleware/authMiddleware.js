@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import PoliceStation from "../models/PoliceStation.js";
+import { mergeActive } from "../utils/softDelete.js";
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -13,7 +14,7 @@ const getJwtSecret = () => {
 export const getEffectiveDistrictId = async (auth) => {
   if (auth.districtId) return auth.districtId;
   if (auth.role === "STATION_OFFICER" && auth.stationId) {
-    const ps = await PoliceStation.findById(auth.stationId).select("district").lean();
+    const ps = await PoliceStation.findOne(mergeActive({ _id: auth.stationId })).select("district").lean();
     return ps?.district ?? null;
   }
   return null;
@@ -84,8 +85,13 @@ export const applyScope = (resource, action) => async (req, res, next) => {
       if (role === "PROVINCE_ADMIN") return next();
       if (role === "DISTRICT_OFFICER" && districtId) req.body.district = districtId;
       if (role === "STATION_OFFICER") {
-        if (districtId) req.body.district = districtId;
-        if (stationId) req.body.policeStation = stationId;
+        if (!stationId) return res.status(403).json({ error: "Forbidden" });
+        const station = await PoliceStation.findOne(mergeActive({ _id: stationId })).select("district").lean();
+        if (!station?.district) {
+          return res.status(403).json({ error: "Police station not found or inactive" });
+        }
+        req.body.district = String(station.district);
+        req.body.policeStation = String(stationId);
       }
       if (!["PROVINCE_ADMIN", "DISTRICT_OFFICER", "STATION_OFFICER"].includes(role)) {
         return res.status(403).json({ error: "Forbidden" });

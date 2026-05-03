@@ -40,7 +40,7 @@ export const tukCreateValidator = [
   body("registrationNumber").isString().trim().notEmpty(),
   body("deviceId").isString().trim().notEmpty(),
   body("ownerName").optional().isString(),
-  body("district").matches(mongoId),
+  body("district").optional().matches(mongoId),
   body("policeStation").optional().matches(mongoId)
 ];
 

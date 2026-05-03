@@ -30,12 +30,27 @@ test.before(async () => {
     testMongoUri = mongoServer.getUri();
   }
 
-  const dbName = process.env.TEST_DB_NAME || "webapi_test";
+  const dbName =
+    process.env.TEST_DB_NAME ||
+    (process.env.CI === "true"
+      ? `webapi_ci_${(process.env.GITHUB_RUN_ID || "local").replace(/[^a-zA-Z0-9_-]/g, "")}_${mk()}`
+      : "webapi_test");
 
-  await mongoose.connect(testMongoUri, { dbName });
+  await mongoose.connect(testMongoUri, {
+    dbName,
+    serverSelectionTimeoutMS: 20_000,
+    writeConcern: { w: "majority", journal: true }
+  });
 });
 
 test.after(async () => {
+  try {
+    if (process.env.CI === "true" && mongoose.connection?.db) {
+      await mongoose.connection.dropDatabase();
+    }
+  } catch (err) {
+    console.warn("test teardown dropDatabase:", err?.message || err);
+  }
   await mongoose.connection.close();
   if (mongoServer) {
     await mongoServer.stop();

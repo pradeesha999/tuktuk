@@ -1,7 +1,17 @@
-/** Filter for documents that are not soft-deleted ({ deletedAt: null } also matches legacy docs without the field in MongoDB queries). */
-export const activeOnly = { deletedAt: null };
+/** Soft-delete filter: include docs with no `deletedAt` field or `deletedAt: null` (explicit $or for driver/server consistency). */
+const activeClause = {
+  $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }]
+};
 
-export const mergeActive = (filter = {}) => ({ ...filter, ...activeOnly });
+/** @deprecated Prefer mergeActive(); kept for callers that need the raw clause */
+export const activeOnly = activeClause;
+
+/** AND-safe composition so filters with `$or` / `$and` are not broken by spreading. */
+export const mergeActive = (filter = {}) => {
+  const f = { ...filter };
+  if (Object.keys(f).length === 0) return { ...activeClause };
+  return { $and: [f, activeClause] };
+};
 
 /** Use after $lookup + $unwind on `tuks` collection */
 export const activeTukDocMatch = {
