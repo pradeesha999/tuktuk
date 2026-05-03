@@ -1,11 +1,13 @@
-// Export the seeded master data and simulated pings to JSON and CSV
-// so the brief's "Simulation Data: JSON or CSV" deliverable has a real artefact.
+// Export the seeded master data and simulated pings to JSON, CSV, and one
+// multi-sheet Excel workbook (CSV cannot represent multiple sheets; use .xlsx).
 //
 // Usage: npm run export:simulation
 // Output: data/provinces.json|.csv, data/districts.json|.csv,
 //         data/police_stations.json|.csv, data/tuks.json|.csv,
-//         data/location_pings.json, data/location_pings.csv
+//         data/location_pings.json, data/location_pings.csv,
+//         data/simulation_all.xlsx (5 worksheets matching those tables)
 import dotenv from "dotenv";
+import ExcelJS from "exceljs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import mongoose from "mongoose";
@@ -44,6 +46,31 @@ const writeCsv = async (file, rows, columns) => {
     .join("\n");
   await fs.writeFile(target, `${header}\n${body}\n`, "utf8");
   console.log(`  wrote ${rows.length.toLocaleString()} -> ${target}`);
+};
+
+const SHEET_NAME_MAX = 31;
+
+/** Excel sheet names cannot contain : \ / ? * [ ] and are capped at 31 chars. */
+const safeSheetName = (name) => {
+  let s = String(name).replace(/[:\\/?*[\]]/g, "_").slice(0, SHEET_NAME_MAX);
+  if (!s) s = "Sheet";
+  return s;
+};
+
+/** One .xlsx with a worksheet per logical CSV (multi-sheet workbook). */
+const writeXlsxWorkbook = async (fileName, sheets) => {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "webapi-export-simulation";
+  for (const { name, columns, rows } of sheets) {
+    const ws = wb.addWorksheet(safeSheetName(name));
+    ws.addRow(columns);
+    for (const row of rows) {
+      ws.addRow(columns.map((c) => (row[c] === null || row[c] === undefined ? "" : row[c])));
+    }
+  }
+  const target = path.join(OUT_DIR, fileName);
+  await wb.xlsx.writeFile(target);
+  console.log(`  wrote workbook (${sheets.length} sheets) -> ${target}`);
 };
 
 const asId = (value) => {
@@ -181,6 +208,45 @@ const main = async () => {
       "source",
       "resolvedDistrict",
       "resolvedProvince"
+    ]);
+
+    const pingColumns = [
+      "_id",
+      "tuk",
+      "pingedAt",
+      "latitude",
+      "longitude",
+      "speedKmh",
+      "heading",
+      "source",
+      "resolvedDistrict",
+      "resolvedProvince"
+    ];
+
+    await writeXlsxWorkbook("simulation_all.xlsx", [
+      { name: "provinces", columns: ["_id", "name", "code", "createdAt", "updatedAt", "deletedAt"], rows: provinceCsvRows },
+      { name: "districts", columns: ["_id", "name", "code", "province", "createdAt", "updatedAt", "deletedAt"], rows: districtCsvRows },
+      {
+        name: "police_stations",
+        columns: ["_id", "name", "code", "district", "createdAt", "updatedAt", "deletedAt"],
+        rows: stationCsvRows
+      },
+      {
+        name: "tuks",
+        columns: [
+          "_id",
+          "registrationNumber",
+          "deviceId",
+          "ownerName",
+          "district",
+          "policeStation",
+          "createdAt",
+          "updatedAt",
+          "deletedAt"
+        ],
+        rows: tukCsvRows
+      },
+      { name: "location_pings", columns: pingColumns, rows: flatPings }
     ]);
 
     console.log(`Simulation export complete in ${OUT_DIR}`);

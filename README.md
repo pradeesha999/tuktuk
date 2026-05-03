@@ -87,7 +87,7 @@ npm run simulate:tracking     # 200 tuks + ~1 week of pings
 npm run export:simulation     # dump JSON + CSV artefacts to ./data
 ```
 
-`seed:geo-boundaries` requires outbound HTTPS and is rate-limited at one request per second to respect Nominatim policy. `simulate:tracking` keeps each vehicle inside its home district polygon and writes `source: "simulated"` so future runs replace prior simulated pings without touching real data. `export:simulation` produces matching JSON and CSV pairs under `data/` for provinces, districts, police stations, and tuks, plus `data/location_pings.json` and `data/location_pings.csv` (pings are filtered to `source: "simulated"`).
+`seed:geo-boundaries` requires outbound HTTPS and is rate-limited at one request per second to respect Nominatim policy. `simulate:tracking` keeps each vehicle inside its home district polygon and writes `source: "simulated"` so future runs replace prior simulated pings without touching real data. `export:simulation` produces matching JSON and CSV pairs under `data/` for provinces, districts, police stations, and tuks, plus `data/location_pings.json` and `data/location_pings.csv` (pings are filtered to `source: "simulated"`). It also writes `data/simulation_all.xlsx`, an Excel workbook with one sheet per table (plain CSV cannot contain multiple sheets).
 
 ---
 
