@@ -1,10 +1,10 @@
-// Export the seeded master data and simulated pings to JSON (and CSV for pings)
-// so the brief's "Simulation Data: JSON or CSV" deliverable has a real artefact
-// in the repo.
+// Export the seeded master data and simulated pings to JSON and CSV
+// so the brief's "Simulation Data: JSON or CSV" deliverable has a real artefact.
 //
 // Usage: npm run export:simulation
-// Output: data/provinces.json, data/districts.json, data/police_stations.json,
-//         data/tuks.json, data/location_pings.json, data/location_pings.csv
+// Output: data/provinces.json|.csv, data/districts.json|.csv,
+//         data/police_stations.json|.csv, data/tuks.json|.csv,
+//         data/location_pings.json, data/location_pings.csv
 import dotenv from "dotenv";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -46,6 +46,14 @@ const writeCsv = async (file, rows, columns) => {
   console.log(`  wrote ${rows.length.toLocaleString()} -> ${target}`);
 };
 
+const asId = (value) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object" && value !== null && "_id" in value) {
+    return String(value._id);
+  }
+  return String(value);
+};
+
 const main = async () => {
   await connectAppMongoose();
   console.log(`MongoDB connected — database "${getAppDatabaseName()}"`);
@@ -57,18 +65,92 @@ const main = async () => {
       .sort({ code: 1 })
       .lean();
     await writeJson("provinces.json", provinces);
+    const provinceCsvRows = provinces.map((p) => ({
+      _id: asId(p._id),
+      name: p.name,
+      code: p.code,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      deletedAt: p.deletedAt ?? ""
+    }));
+    await writeCsv("provinces.csv", provinceCsvRows, [
+      "_id",
+      "name",
+      "code",
+      "createdAt",
+      "updatedAt",
+      "deletedAt"
+    ]);
 
     const districts = await District.find(mergeActive())
       .select("-boundary")
       .sort({ code: 1 })
       .lean();
     await writeJson("districts.json", districts);
+    const districtCsvRows = districts.map((d) => ({
+      _id: asId(d._id),
+      name: d.name,
+      code: d.code,
+      province: asId(d.province),
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+      deletedAt: d.deletedAt ?? ""
+    }));
+    await writeCsv("districts.csv", districtCsvRows, [
+      "_id",
+      "name",
+      "code",
+      "province",
+      "createdAt",
+      "updatedAt",
+      "deletedAt"
+    ]);
 
     const stations = await PoliceStation.find(mergeActive()).sort({ code: 1 }).lean();
     await writeJson("police_stations.json", stations);
+    const stationCsvRows = stations.map((s) => ({
+      _id: asId(s._id),
+      name: s.name,
+      code: s.code,
+      district: asId(s.district),
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      deletedAt: s.deletedAt ?? ""
+    }));
+    await writeCsv("police_stations.csv", stationCsvRows, [
+      "_id",
+      "name",
+      "code",
+      "district",
+      "createdAt",
+      "updatedAt",
+      "deletedAt"
+    ]);
 
     const tuks = await Tuk.find(mergeActive()).sort({ registrationNumber: 1 }).lean();
     await writeJson("tuks.json", tuks);
+    const tukCsvRows = tuks.map((t) => ({
+      _id: asId(t._id),
+      registrationNumber: t.registrationNumber,
+      deviceId: t.deviceId,
+      ownerName: t.ownerName ?? "",
+      district: asId(t.district),
+      policeStation: t.policeStation ? asId(t.policeStation) : "",
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+      deletedAt: t.deletedAt ?? ""
+    }));
+    await writeCsv("tuks.csv", tukCsvRows, [
+      "_id",
+      "registrationNumber",
+      "deviceId",
+      "ownerName",
+      "district",
+      "policeStation",
+      "createdAt",
+      "updatedAt",
+      "deletedAt"
+    ]);
 
     const pings = await LocationPing.find({ source: "simulated" })
       .sort({ tuk: 1, pingedAt: 1 })

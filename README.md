@@ -87,7 +87,7 @@ npm run simulate:tracking     # 200 tuks + ~1 week of pings
 npm run export:simulation     # dump JSON + CSV artefacts to ./data
 ```
 
-`seed:geo-boundaries` requires outbound HTTPS and is rate-limited at one request per second to respect Nominatim policy. `simulate:tracking` keeps each vehicle inside its home district polygon and writes `source: "simulated"` so future runs replace prior simulated pings without touching real data. `export:simulation` produces `data/provinces.json`, `data/districts.json`, `data/police_stations.json`, `data/tuks.json`, `data/location_pings.json` and `data/location_pings.csv`.
+`seed:geo-boundaries` requires outbound HTTPS and is rate-limited at one request per second to respect Nominatim policy. `simulate:tracking` keeps each vehicle inside its home district polygon and writes `source: "simulated"` so future runs replace prior simulated pings without touching real data. `export:simulation` produces matching JSON and CSV pairs under `data/` for provinces, districts, police stations, and tuks, plus `data/location_pings.json` and `data/location_pings.csv` (pings are filtered to `source: "simulated"`).
 
 ---
 
@@ -117,7 +117,7 @@ All endpoints are under `/api/v1`. The full specification, including request bod
 | Province | `/province` | `?includeBoundary=true` to retrieve polygon |
 | District | `/district` | Optional `?provinceId=` |
 | Police station | `/police-station` | Optional `?provinceId=` / `?districtId=` |
-| Tuk | `/tuk`, `/tuk/:id/last-location`, `/tuk/last-ping-area` | Geographic filters honoured per role |
+| Tuk | `/tuk`, `/tuk/:id/last-location`, `/tuk/last-ping-area` | Geographic filters honoured per role; `POST /tuk` as `STATION_OFFICER` needs only `registrationNumber` and `deviceId` (district and station are taken from the token) |
 | Location ping | `/location-ping` | `POST` is `DEVICE`-only |
 
 List endpoints share a common shape:

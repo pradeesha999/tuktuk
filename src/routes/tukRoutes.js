@@ -27,6 +27,12 @@ const router = express.Router();
  *   post:
  *     tags: [Tuk]
  *     summary: Create tuk
+ *     description: >
+ *       Body always requires registrationNumber and deviceId.
+ *       STATION_OFFICER may omit district and policeStation: they are set from the JWT stationId
+ *       and that station’s district (province follows from the district document).
+ *       HQ_ADMIN, PROVINCE_ADMIN, and DISTRICT_OFFICER must send district (and policeStation when binding to a station);
+ *       scope middleware may still restrict or normalize ids.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -35,7 +41,7 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [registrationNumber, deviceId, district]
+ *             required: [registrationNumber, deviceId]
  *             properties:
  *               registrationNumber:
  *                 type: string
@@ -48,9 +54,11 @@ const router = express.Router();
  *                 example: Jane
  *               district:
  *                 type: string
+ *                 description: ObjectId of district. Omit for STATION_OFFICER (injected). Required for other creator roles once scope is applied.
  *                 example: 64f1f1f1f1f1f1f1f1f1f1f1
  *               policeStation:
  *                 type: string
+ *                 description: ObjectId of police station. Omit for STATION_OFFICER (injected from JWT). Optional for HQ when not station-scoped.
  *                 example: 64f2f2f2f2f2f2f2f2f2f2f2
  *     responses:
  *       201:
